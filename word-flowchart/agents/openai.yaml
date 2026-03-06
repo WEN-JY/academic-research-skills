@@ -1,4 +1,4 @@
 interface:
-  display_name: "Graphviz Word Flowchart"
+  display_name: "Word Flowchart"
   short_description: "Create Word-style flowcharts in Graphviz with precise alignment"
   default_prompt: "Create or refine a Word-style flowchart in Graphviz DOT: clear process flow, aligned layout, orthogonal arrows, black/white styling, and module boxes when needed."

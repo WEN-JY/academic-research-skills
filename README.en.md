@@ -5,7 +5,7 @@ A curated set of agent skills for academic research, focused on visualizing rese
 ## Supported Skills
 
 <!-- SKILLS:START -->
-- `graphviz-word-flowchart` - Create Microsoft Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment; Mermaid conversion is supported as a use case.
+- `word-flowchart` - Create Microsoft Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment; Mermaid conversion is supported as a use case.
 <!-- SKILLS:END -->
 
 ## One-Click Install & Docs Update
@@ -32,13 +32,13 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 
 ## Usage
 
-- Mention the skill name directly: `graphviz-word-flowchart`
+- Mention the skill name directly: `word-flowchart`
 - Example:
-  - “Use graphviz-word-flowchart to convert the following research workflow into a Word-style flowchart and output DOT + image.”
+  - “Use word-flowchart to convert the following research workflow into a Word-style flowchart and output DOT + image.”
 
 ## Docs
 
 - `docs/README.md` (Chinese)
 - `docs/README.en.md` (English)
-- `docs/skills/graphviz-word-flowchart.md` (Chinese)
-- `docs/skills/graphviz-word-flowchart.en.md` (English)
+- `docs/skills/word-flowchart.md` (Chinese)
+- `docs/skills/word-flowchart.en.md` (English)

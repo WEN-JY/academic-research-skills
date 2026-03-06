@@ -1,10 +1,10 @@
 ---
-name: graphviz-word-flowchart
+name: word-flowchart
 description: Create Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment. Use when converting text or images into flowcharts, refining DOT layout/spacing, enforcing strict alignment, or building complex parent-child expansions with dashed correspondence links and module boxes.
 description_zh: 使用 Graphviz DOT 绘制 Word 风格流程图，强调黑白样式、正交连线与严格对齐，适合研究技术路线与复杂流程整理。
 ---
 
-# Graphviz Word Flowchart
+# Word Flowchart
 
 ## Overview
 

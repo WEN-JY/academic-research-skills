@@ -30,5 +30,5 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 ## 技能列表
 
 <!-- SKILLS:START -->
-- `graphviz-word-flowchart` - 自主绘制 Microsoft Word 风格流程图（Graphviz DOT），强调黑白样式、正交连线与严格对齐；支持将 Mermaid 流程图作为输入进行转换。
+- `word-flowchart` - 自主绘制 Microsoft Word 风格流程图（Graphviz DOT），强调黑白样式、正交连线与严格对齐；支持将 Mermaid 流程图作为输入进行转换。
 <!-- SKILLS:END -->
