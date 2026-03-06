@@ -5,7 +5,7 @@
 ## 已支持技能
 
 <!-- SKILLS:START -->
-- `graphviz-word-flowchart` - 使用 Graphviz DOT 绘制 Word 风格流程图，强调黑白样式、正交连线与严格对齐，适合研究技术路线与复杂流程整理。
+- `graphviz-word-flowchart` - 自主绘制 Microsoft Word 风格流程图（Graphviz DOT），强调黑白样式、正交连线与严格对齐；支持将 Mermaid 流程图作为输入进行转换。
 <!-- SKILLS:END -->
 
 ## 一键安装与文档更新

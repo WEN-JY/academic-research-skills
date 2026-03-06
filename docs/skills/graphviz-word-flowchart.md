@@ -1,6 +1,6 @@
 # graphviz-word-flowchart
 
-用于将研究流程/技术路线梳理为 Word 风格流程图的技能，输出 Graphviz DOT 代码与可渲染的结构。
+用于自主绘制 Microsoft Word 风格流程图的技能，输出 Graphviz DOT 代码与可渲染结构；支持将 Mermaid 流程图作为输入进行转换。
 
 ## 适用场景
 
@@ -10,7 +10,7 @@
 
 ## 输入与输出
 
-- 输入：结构化文字描述、分层步骤、或已有草图
+- 输入：结构化文字描述、分层步骤、已有草图，或 Mermaid 流程图
 - 输出：
   - Graphviz DOT 代码
   - （可选）渲染图片
@@ -18,6 +18,7 @@
 ## 使用示例
 
 - “使用 graphviz-word-flowchart 将以下研究流程整理为 Word 风格流程图，要求黑白、正交连线、严格对齐，并给出 DOT + 图片。”
+- “使用 graphviz-word-flowchart 将下面的 Mermaid 流程图转换为 Word 风格，并输出 DOT + 图片。”
 
 ## 渲染建议
 

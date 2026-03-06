@@ -30,5 +30,5 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 ## Skill List
 
 <!-- SKILLS:START -->
-- `graphviz-word-flowchart` - Create Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment.
+- `graphviz-word-flowchart` - Create Microsoft Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment; Mermaid conversion is supported as a use case.
 <!-- SKILLS:END -->

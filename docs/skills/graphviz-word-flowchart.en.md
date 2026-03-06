@@ -1,6 +1,6 @@
 # graphviz-word-flowchart
 
-A skill that converts research workflows/technical roadmaps into Word-style flowcharts, producing Graphviz DOT output.
+A skill for creating Microsoft Word-style flowcharts, producing Graphviz DOT output; Mermaid conversion is supported as a use case.
 
 ## When To Use
 
@@ -10,7 +10,7 @@ A skill that converts research workflows/technical roadmaps into Word-style flow
 
 ## Input & Output
 
-- Input: structured text, layered steps, or a rough sketch
+- Input: structured text, layered steps, a rough sketch, or Mermaid flowcharts
 - Output:
   - Graphviz DOT code
   - (Optional) rendered image
@@ -18,6 +18,7 @@ A skill that converts research workflows/technical roadmaps into Word-style flow
 ## Example Prompt
 
 - “Use graphviz-word-flowchart to convert the following research workflow into a Word-style flowchart, with black/white styling, orthogonal edges, strict alignment, and output DOT + image.”
+- “Use graphviz-word-flowchart to convert the following Mermaid flowchart into a Word-style flowchart and output DOT + image.”
 
 ## Rendering Notes
 

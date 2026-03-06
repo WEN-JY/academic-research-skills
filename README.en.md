@@ -5,7 +5,7 @@ A curated set of agent skills for academic research, focused on visualizing rese
 ## Supported Skills
 
 <!-- SKILLS:START -->
-- `graphviz-word-flowchart` - Create Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment.
+- `graphviz-word-flowchart` - Create Microsoft Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment; Mermaid conversion is supported as a use case.
 <!-- SKILLS:END -->
 
 ## One-Click Install & Docs Update
