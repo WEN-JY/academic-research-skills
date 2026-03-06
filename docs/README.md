@@ -1,6 +1,6 @@
 # 文档索引
 
-本目录提供技能安装与使用说明，中文为主。
+本目录提供技能安装与使用说明，中文为主。仓库中的 skill 源码统一存放在 `skills/` 目录下。
 
 ## 快速上手
 
@@ -14,7 +14,7 @@
 curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/main/scripts/install.sh | sh
 ```
 
-默认安装到 `$CODEX_HOME/skills` 或 `~/.codex/skills`，并更新 `README.md` 与 `docs/README.md` 的技能列表。
+默认安装到 `$CODEX_HOME/skills` 或 `~/.codex/skills`，并更新 `README.md` 与 `docs/README.md` 的技能列表；远程安装时会先缓存仓库快照到 `~/.codex/.cache/academic-research-skills/repo`（若设置了 `CODEX_HOME`，则使用对应缓存目录）。
 
 追加参数示例：
 

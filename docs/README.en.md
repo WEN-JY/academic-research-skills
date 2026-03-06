@@ -1,6 +1,6 @@
 # Docs Index
 
-This folder provides installation and usage notes for each skill.
+This folder provides installation and usage notes for each skill. Skill sources in this repo are organized under the `skills/` directory.
 
 ## Quick Start
 
@@ -14,7 +14,7 @@ This folder provides installation and usage notes for each skill.
 curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/main/scripts/install.sh | sh
 ```
 
-Installs skills (symlink by default) and updates the skill lists in `README.md` and `docs/README.md`.
+Installs skills (symlink by default) and updates the skill lists in `README.md` and `docs/README.md`; for remote installs it first caches a repo snapshot at `~/.codex/.cache/academic-research-skills/repo` (or under `CODEX_HOME` when set).
 
 Example with arguments:
 

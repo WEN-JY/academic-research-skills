@@ -2,6 +2,8 @@
 
 A curated set of agent skills for academic research, focused on visualizing research workflows and technical roadmaps.
 
+Skill sources in this repo are organized under the `skills/` directory.
+
 ## Supported Skills
 
 <!-- SKILLS:START -->
@@ -16,7 +18,7 @@ Run from anywhere (no repo clone needed):
 curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/main/scripts/install.sh | sh
 ```
 
-Default install directory: `$CODEX_HOME/skills` or `~/.codex/skills`. The script uses symlinks by default.
+Default install directory: `$CODEX_HOME/skills` or `~/.codex/skills`. The script uses symlinks by default; for remote installs it first caches a repo snapshot at `~/.codex/.cache/academic-research-skills/repo` (or under `CODEX_HOME` when set).
 
 Common options (append to the command):
 - `--dest /path/to/skills` set install directory

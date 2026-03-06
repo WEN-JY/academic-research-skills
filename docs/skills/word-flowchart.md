@@ -24,4 +24,4 @@
 
 - 固定坐标布局时建议使用：`neato -n2`
 - 简单流程可使用：`dot`
-- 详细布局规则见：`word-flowchart/references/graphviz-layout.md`
+- 详细布局规则见：`skills/word-flowchart/references/graphviz-layout.md`

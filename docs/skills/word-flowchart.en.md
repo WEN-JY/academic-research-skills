@@ -24,4 +24,4 @@ A skill for creating Microsoft Word-style flowcharts, producing Graphviz DOT out
 
 - Use `neato -n2` for fixed coordinates
 - Use `dot` for simple flows
-- Layout guide: `word-flowchart/references/graphviz-layout.md`
+- Layout guide: `skills/word-flowchart/references/graphviz-layout.md`

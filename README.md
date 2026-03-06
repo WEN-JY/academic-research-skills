@@ -2,6 +2,8 @@
 
 面向学术研究场景的 Agent Skills 集合，聚焦“研究流程可视化、技术路线图”等高频需求，提供可复用、可扩展的技能模板。
 
+仓库中的 skill 源码统一存放在 `skills/` 目录下。
+
 ## 已支持技能
 
 <!-- SKILLS:START -->
@@ -16,7 +18,7 @@
 curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/main/scripts/install.sh | sh
 ```
 
-默认安装目录：`$CODEX_HOME/skills` 或 `~/.codex/skills`，默认使用软链接（便于更新）。
+默认安装目录：`$CODEX_HOME/skills` 或 `~/.codex/skills`，默认使用软链接（便于更新）；远程安装时会先缓存仓库快照到 `~/.codex/.cache/academic-research-skills/repo`（若设置了 `CODEX_HOME`，则使用对应缓存目录）。
 
 常用参数（追加在命令末尾）：
 - `--dest /path/to/skills` 指定安装目录
