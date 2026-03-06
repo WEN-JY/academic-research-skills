@@ -1,13 +1,1 @@
-# Academic Research Skills
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)  
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)  
-![GitHub Stars](https://img.shields.io/github/stars/WEN-JY/academic-research-skills.svg?style=social)  
-![Forks](https://img.shields.io/github/forks/WEN-JY/academic-research-skills.svg?style=social)  
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)  
-
-## Description
-A repository for academic research skills resources and tutorials.
-
-## Getting Started
-Instructions on how to set up and use the project.
+![License](https://img.shields.io/badge/license-MIT-brightgreen) ![Python version](https://img.shields.io/badge/python-3.8%2B-yellow) ![GitHub stars](https://img.shields.io/github/stars/WEN-JY/academic-research-skills?style=social) ![Forks](https://img.shields.io/github/forks/WEN-JY/academic-research-skills?style=social) ![Issues](https://img.shields.io/badge/issues-3-orange) ![Last commit](https://img.shields.io/github/last-commit/WEN-JY/academic-research-skills) ![Release version](https://img.shields.io/github/v/release/WEN-JY/academic-research-skills)\n\n# Academic Research Skills\n\nThis repository contains resources and tools to enhance academic research skills, providing useful links and materials for scholars and researchers.\n\n## Contents\n\n- Research methodologies\n- Citation management\n- Writing tips\n- Resource links\n\nPlease feel free to contribute and enhance this repository!
