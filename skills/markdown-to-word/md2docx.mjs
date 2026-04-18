@@ -6,14 +6,15 @@
  *
  * Usage: node md2docx.mjs [-o output.docx] input.md
  */
-import { readFileSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { resolve, dirname } from 'path';
 import MarkdownIt from 'markdown-it';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, Math as DocxMath,
   HeadingLevel, AlignmentType, BorderStyle, WidthType, ShadingType,
-  LevelFormat, convertInchesToTwip, ExternalHyperlink,
+  LevelFormat, convertInchesToTwip, ExternalHyperlink, ImageRun,
 } from 'docx';
+// Image dimensions: parse PNG/JPEG headers directly (no external dep)
 import { latexToInlineMath, latexToMathChildren } from './latex2math.mjs';
 
 // ── CLI ──
@@ -27,6 +28,7 @@ for (let i = 0; i < args.length; i++) {
 if (!input) { console.error('Usage: node md2docx.mjs [-o output.docx] input.md'); process.exit(2); }
 if (!output) output = input.replace(/\.md$/i, '') + '.docx';
 
+const inputDir = dirname(resolve(input));
 const rawMarkdown = readFileSync(resolve(input), 'utf-8');
 
 // ── Pre-process: convert tab-separated tables to standard Markdown tables ──
@@ -251,6 +253,58 @@ function tableRun(opts = {}) {
   return { font: fontOverride || FONT_BODY, size: FONT_SIZE_TABLE, ...rest };
 }
 
+// ── Image support ──
+const MAX_IMG_WIDTH_PX = 550;
+
+function getImageDimensions(buf) {
+  // PNG: bytes 16-23 contain width(4) and height(4) as big-endian uint32
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) {
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  }
+  // JPEG: scan for SOF0/SOF2 markers (0xFFC0/0xFFC2)
+  if (buf[0] === 0xFF && buf[1] === 0xD8) {
+    let i = 2;
+    while (i < buf.length - 9) {
+      if (buf[i] === 0xFF) {
+        const marker = buf[i + 1];
+        if (marker === 0xC0 || marker === 0xC2) {
+          return { width: buf.readUInt16BE(i + 7), height: buf.readUInt16BE(i + 5) };
+        }
+        const segLen = buf.readUInt16BE(i + 2);
+        i += 2 + segLen;
+      } else { i++; }
+    }
+  }
+  return { width: 400, height: 300 }; // fallback
+}
+
+function createImageRun(tok) {
+  const src = (tok.attrs || []).find(a => a[0] === 'src')?.[1];
+  if (!src) return null;
+  const imgPath = src.startsWith('/') ? src : resolve(inputDir, src);
+  if (!existsSync(imgPath)) {
+    console.warn(`Image not found: ${imgPath}`);
+    return null;
+  }
+  try {
+    const imgData = readFileSync(imgPath);
+    const dims = getImageDimensions(imgData);
+    let w = dims.width, h = dims.height;
+    if (w > MAX_IMG_WIDTH_PX) {
+      const scale = MAX_IMG_WIDTH_PX / w;
+      w = Math.round(w * scale);
+      h = Math.round(h * scale);
+    }
+    return new ImageRun({
+      data: imgData,
+      transformation: { width: w, height: h },
+    });
+  } catch (e) {
+    console.warn(`Failed to load image ${imgPath}: ${e.message}`);
+    return null;
+  }
+}
+
 // ── Inline tokens → children (TextRun + Math) ──
 // runFn: function(opts) → TextRun options, defaults to defaultRun
 function parseInline(children, extraStyle = {}, runFn = defaultRun) {
@@ -295,6 +349,17 @@ function parseInline(children, extraStyle = {}, runFn = defaultRun) {
       case 'math_inline':
         runs.push(latexToInlineMath(tok.content));
         break;
+      case 'image': {
+        const imgRun = createImageRun(tok);
+        if (imgRun) {
+          runs.push(imgRun);
+        } else {
+          // Fallback: show alt text
+          const alt = tok.content || tok.children?.map(c => c.content).join('') || '[image]';
+          runs.push(new TextRun(runFn({ text: `[${alt}]`, italics: true })));
+        }
+        break;
+      }
       default:
         if (tok.content) {
           runs.push(new TextRun(runFn({ text: tok.content, bold, italics: italic })));
