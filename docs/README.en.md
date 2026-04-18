@@ -31,4 +31,7 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 
 <!-- SKILLS:START -->
 - `word-flowchart` - Create Microsoft Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment; Mermaid conversion is supported as a use case.
+- `cites-review` - Review and normalize references and in-text citations for GB/T 7714-2015, CNKI extraction, citation cross-checking, and renumbering workflows.
+- `html-slide` - Generate HTML slides for academic defense and reporting with a consistent visual system, content cards, tables, and formula blocks.
+- `markdown-to-word` - Convert Markdown academic writing into Word documents with support for formulas, tables, and images.
 <!-- SKILLS:END -->
