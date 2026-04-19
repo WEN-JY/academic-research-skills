@@ -1,53 +1,51 @@
 # Markdown to Word Conversion
 
-Convert Markdown files with LaTeX math, tables, and SVG images to Word (.docx) using a custom Pandoc pipeline with Lua filters and OMML post-processing.
+Convert Markdown files with LaTeX math, tables, and images to Word (`.docx`) using the bundled Node.js converter. The default output style is aimed at the common body-text rules of the Zhejiang University Master of Engineering Management thesis format.
 
 ## When to Use
 
 - User wants to convert a `.md` file (especially academic papers) to `.docx`
-- Document contains LaTeX math, equation numbering, or SVG images
-- Chinese/English mixed content with typographic space issues in Word
+- Document contains LaTeX math, tables, images, or mixed Chinese/English text
+- User wants 正文小四仿宋、1.5 倍行距、章标题小三加黑、两端对齐、三线表等论文格式
 
 ## Core Command
 
-All scripts bundled in `.claude/skills/markdown-to-word/` (self-contained).
+All scripts are bundled in `skills/markdown-to-word/`.
 
 ```bash
-.claude/skills/markdown-to-word/convert_md_to_docx.sh [-o output.docx] input.md
+skills/markdown-to-word/convert_md_to_docx.sh [-o output.docx] input.md
 ```
+
+## Default Formatting Profile
+
+- 正文：小四号、仿宋、首行缩进 2 字符
+- 段落：1.5 倍行距、两端对齐
+- 一级标题：小三号、仿宋、加黑
+- 二级标题：四号、仿宋、加黑
+- 三级标题：小四号、仿宋
+- 表格：三线表
+- 英文与数字：`Times New Roman`
 
 ## Pipeline
 
 ```
-input.md → sed(\tag→\text) → pandoc + 4 Lua filters → .docx → clean_docx_omml.mjs → output.docx
+input.md → 预处理（制表符表格 / 段落断行 / 中文标点） → markdown-it 解析 → docx 生成 → output.docx
 ```
 
-### Lua Filters (in order):
-1. **auto-math.lua** - Heuristic plain-text math → TeX (Unicode symbols, subscripts, piecewise). Disable: `PANDOC_AUTO_MATH=0`
-2. **math-clean.lua** - Sanitize `\,\;\:\!` spacing commands and U+2000–U+200A Unicode spaces in math (docx only)
-3. **svg-to-png.lua** - Rasterize SVG via headless Chrome (`svg2png.sh`)
-4. **move-eqnum.lua** - Extract equation numbers `（4-8）` from InlineMath to plain text
+## Key Behaviors
 
-### Post-processor:
-- **clean_docx_omml.mjs** - Remove thin/zero-width spaces from `<m:t>` OMML runs, fix U+FFFD artifacts. Disable: `DOCX_OMML_POSTCLEAN=0`
+- 支持标题、段落、列表、引用块、代码块
+- 支持行内公式与块公式
+- 支持 Markdown 表格，并默认输出三线表
+- 支持本地图片插入
+- 生成完成后自动打开 Word 文件预览
 
-## Pandoc From Format
+## Main Files
 
-```
-markdown+tex_math_dollars+tex_math_single_backslash+raw_tex+pipe_tables+grid_tables+multiline_tables+table_captions+superscript+subscript-smart
-```
-
-## Environment Variables
-
-- `PANDOC_BIN` - Override pandoc path
-- `PANDOC_AUTO_MATH=0` - Disable auto-math filter
-- `DOCX_OMML_POSTCLEAN=0` - Disable OMML post-cleaning
-- `CHROME_BIN` - Chrome binary for SVG rendering (default: macOS Chrome.app)
-
-## File Structure
-
-All bundled in `.claude/skills/markdown-to-word/` — see SKILL.md for full tree.
+- `skills/markdown-to-word/convert_md_to_docx.sh`
+- `skills/markdown-to-word/md2docx.mjs`
+- `skills/markdown-to-word/latex2math.mjs`
 
 ## Dependencies
 
-- pandoc, Node.js, Google Chrome (for SVG)
+- Node.js
