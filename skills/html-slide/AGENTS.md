@@ -11,7 +11,10 @@ Generate standalone HTML slide files (1280×720px) for academic defense and prof
 
 ## Mandatory Workflow
 
-Do not generate HTML directly from long Markdown. First create a `slide-outline`, then show the outline page by page to the user for confirmation, save the confirmed outline to `slides/大纲.md`, then generate HTML, then run acceptance checks.
+Support two workflows:
+
+- If the user does **not** provide an outline, first create a `slide-outline`, then show the outline page by page to the user for confirmation, save the confirmed outline to `slides/大纲.md`, then generate HTML, then run acceptance checks.
+- If the user **already provides** a page-by-page outline, `slides/大纲.md`, or equivalent structured slide plan, skip the planning stage, normalize and save that outline to `slides/大纲.md`, then generate HTML directly and run acceptance checks.
 
 Output one HTML file per slide by default. Put all slide pages in `slides/` using names like `slide-01.html`, `slide-02.html`, etc. Also copy the logo into `slides/assets/logo.png` so the deck is self-contained. Do not create one giant multi-slide HTML file unless the user explicitly asks for single-file output.
 
@@ -20,13 +23,15 @@ Do not add visible navigation buttons or navigation overlays. Add only keyboard 
 Each planned slide should have:
 
 - One title
-- One clear core argument or communication purpose
+- For most content slides, one clear core argument or communication purpose
 - Support points arranged with clear hierarchy
 - Matching chart, visual, case, data, or reasoning that supports the core argument
 
+Cover, section, agenda, Q&A transition, closing, and thank-you slides do not need a formal core argument if the page purpose is already clear.
+
 Split content when multiple core arguments compete, support points become crowded, different evidence forms compete for attention, timeline/checklist items exceed six, or a table is larger than 4×4.
 
-Before generating HTML, output the outline to the user page by page and get confirmation. After confirmation, write the final outline to `slides/大纲.md`. Generate slides from `slides/大纲.md` rather than directly from the source Markdown.
+Before generating HTML, output the outline to the user page by page and get confirmation when the outline is newly generated from source material. If the user already provides a usable outline, treat it as the source of truth unless the user asks for restructuring. In both cases, write the working outline to `slides/大纲.md` and generate slides from `slides/大纲.md` rather than directly from the source Markdown.
 
 ## Visual Modes
 
@@ -83,9 +88,9 @@ V2 content headers use an 86px topbar. The logo block is mandatory, `268px × 86
 
 ## New Slide Steps
 
-1. Create `slide-outline`
-2. Output the outline page by page and confirm it with the user
-3. Save the confirmed outline to `slides/大纲.md`
+1. If needed, create `slide-outline`
+2. If needed, output the outline page by page and confirm it with the user
+3. Save the confirmed or user-provided outline to `slides/大纲.md`
 4. Apply split rules and select page types
 5. Choose `academic-defense` or `tech-share`
 6. Build body from component library
