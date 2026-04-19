@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{PRESENTATION_TITLE}}</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+  --navy:#071f3a;
+  --navy-2:#0b3764;
+  --blue:#1567a5;
+  --gold:#c7a55a;
+  --gold-2:#e3cc8a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+  background:#c9d1dc;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:48px;
+  padding:48px 0;
+}
+.slide {
+  width:1280px;
+  height:720px;
+  overflow:hidden;
+  position:relative;
+  flex-shrink:0;
+  box-shadow:0 30px 80px rgba(7,31,58,.26), 0 6px 20px rgba(0,0,0,.12);
+}
+.cover {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(227,204,138,.20) 0%, transparent 28%),
+    radial-gradient(circle at 18% 85%, rgba(21,103,165,.28) 0%, transparent 30%),
+    linear-gradient(135deg, #061a31 0%, #09284a 48%, #0c3c69 100%);
+  color:#fff;
+}
+.cover::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size:42px 42px;
+  mask-image:linear-gradient(90deg, rgba(0,0,0,.1), rgba(0,0,0,.85), rgba(0,0,0,.35));
+}
+.cover::after {
+  content:'';
+  position:absolute;
+  right:-140px;
+  top:-160px;
+  width:520px;
+  height:520px;
+  border:1px solid rgba(227,204,138,.22);
+  border-radius:50%;
+  box-shadow:0 0 0 42px rgba(255,255,255,.025), 0 0 0 96px rgba(255,255,255,.015);
+}
+.brand {
+  position:absolute;
+  left:58px;
+  top:42px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  z-index:2;
+}
+.brand img {
+  width:210px;
+  height:58px;
+  object-fit:contain;
+  background:rgba(255,255,255,.94);
+  border-radius:4px;
+  padding:3px 8px;
+}
+.brand-line {
+  width:1px;
+  height:36px;
+  background:rgba(255,255,255,.24);
+}
+.brand-text {
+  font-size:13px;
+  color:rgba(255,255,255,.72);
+  letter-spacing:.08em;
+  line-height:1.5;
+}
+.cover-main {
+  position:absolute;
+  left:72px;
+  top:178px;
+  width:710px;
+  z-index:2;
+}
+.eyebrow {
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  color:var(--gold-2);
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.eyebrow::before {
+  content:'';
+  width:46px;
+  height:2px;
+  background:linear-gradient(90deg, var(--gold), transparent);
+}
+.cover-title {
+  margin-top:26px;
+  font-size:56px;
+  font-weight:900;
+  line-height:1.16;
+  letter-spacing:.02em;
+  text-shadow:0 10px 28px rgba(0,0,0,.24);
+}
+.cover-title .gold {
+  color:var(--gold-2);
+}
+.cover-subtitle {
+  margin-top:22px;
+  width:640px;
+  font-size:21px;
+  line-height:1.7;
+  color:rgba(255,255,255,.78);
+}
+.cover-meta {
+  margin-top:38px;
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+.meta-pill {
+  height:38px;
+  padding:0 18px;
+  border-radius:999px;
+  border:1px solid rgba(227,204,138,.32);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.82);
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  backdrop-filter:blur(10px);
+}
+.cover-panel {
+  position:absolute;
+  right:72px;
+  top:156px;
+  width:360px;
+  z-index:2;
+}
+.glass-card {
+  border:1px solid rgba(255,255,255,.16);
+  background:linear-gradient(135deg, rgba(255,255,255,.15), rgba(255,255,255,.06));
+  border-radius:22px;
+  padding:28px 28px 24px;
+  box-shadow:0 24px 50px rgba(0,0,0,.22);
+  backdrop-filter:blur(16px);
+}
+.panel-kicker {
+  font-size:13px;
+  color:rgba(255,255,255,.62);
+  letter-spacing:.12em;
+}
+.panel-number {
+  margin-top:12px;
+  font-size:72px;
+  font-weight:900;
+  line-height:1;
+  color:var(--gold-2);
+}
+.panel-desc {
+  margin-top:10px;
+  font-size:16px;
+  color:rgba(255,255,255,.80);
+  line-height:1.6;
+}
+.panel-list {
+  margin-top:24px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.panel-item {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px 14px;
+  border-radius:12px;
+  background:rgba(255,255,255,.08);
+}
+.panel-item span:first-child {
+  color:rgba(255,255,255,.82);
+  font-size:14px;
+}
+.panel-item span:last-child {
+  color:var(--gold-2);
+  font-size:13px;
+  font-weight:800;
+}
+.cover-footer {
+  position:absolute;
+  left:72px;
+  right:72px;
+  bottom:44px;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:rgba(255,255,255,.54);
+  font-size:13px;
+}
+.cover-footer::before {
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  top:-20px;
+  height:1px;
+  background:linear-gradient(90deg, rgba(227,204,138,.65), rgba(255,255,255,.08), transparent);
+}
+</style>
+</head>
+<body>
+
+<section class="slide cover">
+  <div class="brand">
+    <img src="../assets/logo.png" alt="浙江大学工程师学院">
+    <div class="brand-line"></div>
+    <div class="brand-text">Academic Research<br>Presentation</div>
+  </div>
+
+  <main class="cover-main">
+    <div class="eyebrow">{{EYEBROW}}</div>
+    <div class="cover-title">
+      {{TITLE_LINE_1}}<br>
+      与<span class="gold">{{TITLE_HIGHLIGHT}}</span>
+    </div>
+    <div class="cover-subtitle">
+      {{SUBTITLE}}
+    </div>
+    <div class="cover-meta">
+      <div class="meta-pill"><i class="fas fa-user"></i> {{AUTHOR}}</div>
+      <div class="meta-pill"><i class="fas fa-calendar-alt"></i> {{DATE}}</div>
+      <div class="meta-pill"><i class="fas fa-location-dot"></i> {{OCCASION}}</div>
+    </div>
+  </main>
+
+  <aside class="cover-panel">
+    <div class="glass-card">
+      <div class="panel-kicker">{{PANEL_KICKER}}</div>
+      <div class="panel-number">{{PANEL_NUMBER}}</div>
+      <div class="panel-desc">{{PANEL_DESC}}</div>
+      <div class="panel-list">
+        <div class="panel-item"><span>{{ITEM_1_LABEL}}</span><span>{{ITEM_1_VALUE}}</span></div>
+        <div class="panel-item"><span>{{ITEM_2_LABEL}}</span><span>{{ITEM_2_VALUE}}</span></div>
+        <div class="panel-item"><span>{{ITEM_3_LABEL}}</span><span>{{ITEM_3_VALUE}}</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="cover-footer">
+    <span>{{FOOTER_LEFT}}</span>
+    <span>{{FOOTER_RIGHT}}</span>
+  </div>
+</section>
+
+</body>
+</html>

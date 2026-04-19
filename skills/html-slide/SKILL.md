@@ -7,7 +7,190 @@ description: "Generate HTML-based presentation slides for academic defense and p
 
 ## Overview
 
-Generate standalone HTML slide files (1280×720px) following an academic defense design system. Each slide is a self-contained `.html` file with embedded CSS. The design features a navy-blue/gold color scheme, dot-pattern backgrounds, white content cards with colored accents, and professional typography.
+Generate standalone HTML slide files (1280×720px) following an academic defense design system. Each slide is a self-contained `.html` file with embedded CSS. The design features a navy-blue/gold color scheme, deep-blue keynote-style covers, full-height header logos, large white content cards, and professional typography.
+
+## Mandatory Generation Workflow
+
+Do **not** generate HTML directly from long Markdown. First create a slide-level content plan, present the page-by-page outline to the user for confirmation, save the confirmed outline, then generate HTML, then validate the rendered page.
+
+1. **Content Planning Layer** — convert Markdown into a `slide-outline`.
+2. **User Confirmation Layer** — present the outline slide by slide and get user confirmation or revision requests.
+3. **Outline Persistence Layer** — save the confirmed outline to `slides/大纲.md`.
+4. **Layout Decision Layer** — choose page types and visual structure using the confirmed outline.
+5. **Visual Generation Layer** — apply the selected visual mode and component system.
+6. **Acceptance Layer** — validate typography, density, visual richness, and overload risk before delivery.
+
+Output policy:
+
+- Generate **one HTML file per slide** by default.
+- Put all slide pages under a `slides/` directory.
+- Save the confirmed page-by-page outline to `slides/大纲.md` before HTML generation.
+- Copy deck assets into `slides/assets/`, especially the required logo file at `slides/assets/logo.png`.
+- Do not put the whole deck into one giant HTML file unless the user explicitly requests a single-file deck.
+- Add keyboard-only page switching after slide generation. Do **not** add visible navigation buttons or navigation overlays.
+
+### 1. Content Planning Layer
+
+For Markdown-based decks, first produce a `slide-outline` and use it as the source of truth:
+
+```yaml
+- title: "Page title"
+  core_argument: "The main argument or message this slide should communicate"
+  points:
+    - "Support point or explanation"
+    - "Support point or explanation"
+  evidence:
+    type: "timeline | metric | comparison | quote | case | checklist | table | diagram | mixed"
+    note: "How the chart, visual, data, case, or argument supports the core argument"
+  visual_type: "cover | agenda | section | single-insight | timeline | comparison | checklist | q-and-a | closing"
+  split_if_needed: true
+```
+
+Rules:
+
+- Every slide must have a clear **core argument** or communication purpose.
+- Pair the core argument with suitable evidence: chart, metric, timeline, case, comparison, quote, diagram, or structured reasoning.
+- Support points are flexible; use as many as the layout can carry clearly, but keep hierarchy obvious.
+- Multiple evidence forms are allowed when they serve the same core argument and do not compete for visual focus.
+- Do not mix timeline + KPI + table + checklist on the same slide unless their relationship is clear and one visual hierarchy dominates.
+- If the source content contains narrative and analysis at the same time, split it into separate story and insight slides.
+
+### 1.5 User Confirmation Layer
+
+Before generating any HTML:
+
+- Output the outline to the user **page by page**.
+- Ask the user to confirm the outline or request changes.
+- Revise the outline until the user is satisfied.
+- Do not start HTML generation before the outline is confirmed, unless the user explicitly asks to skip confirmation.
+
+Recommended outline display format:
+
+```markdown
+# 幻灯片大纲
+
+## 第1页
+- 标题：
+- 核心论点：
+- 内容要点：
+- 证据/图表：
+- 版式建议：
+
+## 第2页
+- 标题：
+- 核心论点：
+- 内容要点：
+- 证据/图表：
+- 版式建议：
+```
+
+### 1.6 Outline Persistence Layer
+
+After user confirmation:
+
+- Create the `slides/` directory if needed.
+- Save the final confirmed outline to `slides/大纲.md`.
+- Treat `slides/大纲.md` as the deck blueprint.
+- Generate all HTML slides from `slides/大纲.md`, not from the original long Markdown directly.
+
+### 2. Split Rules
+
+Split the source content into multiple slides when any of the following is true:
+
+- Multiple core arguments compete with each other.
+- Support points cannot be grouped into a clear hierarchy.
+- Evidence forms compete for attention rather than supporting the same argument.
+- A table has more than 4 rows or 4 columns.
+- A timeline has more than 6 nodes.
+- A checklist has more than 6 items.
+- Main body text becomes dense enough that the slide would need small fonts or crowded spacing.
+- The slide tries to both tell a personal story and make a structured comparison.
+
+When splitting, optimize for **single-slide clarity**, not for fewer pages.
+
+### 3. Page Type Selection
+
+Use page types deliberately:
+
+| Page Type | Best For | Avoid |
+|-----------|----------|-------|
+| Cover | Opening, chapter title, major transition | Dense body text |
+| Agenda | 4–8 modules with short labels | 10+ detailed items |
+| Section | Chapter transition and mental reset | Tables or long lists |
+| Single Insight | One strong claim with 2–3 proofs | Multiple unrelated claims |
+| Timeline | Process, milestones, journey | More than 6 nodes |
+| Comparison | Before/after, stages, alternatives | Long paragraph cells |
+| Checklist | Action items, pitfalls, review criteria | More than 6 items |
+| Q&A | Defense preparation and likely questions | Long answer paragraphs |
+| Closing | Summary, final call-to-action | New arguments |
+
+## Recommended V2 Templates
+
+Use these templates first for new academic-defense or professional-sharing decks. They are more spacious and formal than the legacy component library.
+
+| Template | Use | File |
+|----------|-----|------|
+| V2 Grand Cover | Opening slide / section title with strong visual presence | `templates/v2-cover-grand.html` |
+| V2 Grand Content | Main content slide with full-height top-right logo, hero summary, main card, side panel, and bottom metrics | `templates/v2-content-grand.html` |
+
+### V2 Design Principles
+
+- **One visual center per slide** — use a strong cover title, hero insight, or main argument as the dominant focus.
+- **Deep blue + restrained gold** — keep gold for title highlights, key numbers, dividers, and status accents only.
+- **Fewer borders, stronger layering** — prefer soft shadows, glass panels, and large white cards over many thin bordered boxes.
+- **Larger hierarchy gaps** — use 27–56px display titles, 18–21px lead text, and 14–15px body text.
+- **Full-height logo header** — on V2 content slides, the top-right logo block must be the same height as the header and aligned to the top-right corner.
+
+## Visual Modes
+
+### Academic Defense Mode
+
+Use this mode for thesis defense, research reporting, and formal academic presentations. Keep the design calm, precise, and institutionally credible.
+
+### Tech Share Mode
+
+Use `tech-share` for experience-sharing decks, AI workflow talks, product thinking, engineering practice, or any presentation where the user asks for a more technological / futuristic look.
+
+Style direction:
+
+- Use deep navy, cyan-blue, and restrained purple gradients.
+- Add glassmorphism panels, subtle glow, fine grid or HUD-style decorative lines.
+- Use metric strips, status chips, data badges, and illuminated timeline nodes.
+- Prefer layered backgrounds: background layer + content layer + decorative technology layer.
+- Avoid exaggerated cyberpunk neon; keep it as **academic technology premium**, not game UI.
+
+Every `tech-share` slide should include:
+
+- One clear core argument or communication purpose.
+- A dominant visual module.
+- Supporting evidence or argumentation that reinforces the core argument.
+- One visual enhancement layer, such as glow grid, data chips, gradient rings, or HUD dividers.
+
+Avoid plain white-card-only pages in `tech-share` mode.
+
+### V2 Header Logo Rule
+
+```css
+.topbar { height:86px; padding:0 0 0 58px; position:relative; }
+.chapter { padding-right:300px; }
+.topbar-logo {
+  position:absolute; top:0; right:0;
+  width:268px; height:86px;
+  background:rgba(255,255,255,.96);
+  display:flex; align-items:center; justify-content:center;
+}
+.topbar-logo img {
+  width:100%; height:100%;
+  object-fit:contain; object-position:center;
+  padding:0 14px; border-radius:0;
+}
+```
+
+```html
+<div class="topbar-logo">
+  <img src="assets/logo.png" alt="浙江大学工程师学院">
+</div>
+```
 
 ## Design System
 
@@ -16,22 +199,22 @@ Generate standalone HTML slide files (1280×720px) following an academic defense
 ```css
 :root {
   /* Primary */
-  --navy:    #002952;    /* Header, headings, dark backgrounds */
-  --blue:    #1a6fa8;    /* Secondary blue */
-  --accent:  #2980b9;    /* Links, highlights, borders */
+  --navy:    #003366;    /* Header, headings, dark backgrounds */
+  --blue:    #004488;    /* Secondary blue */
+  --accent:  #3498db;    /* Links, highlights, borders */
   /* Semantic */
-  --teal:    #0097b2;    /* Category C / formulas */
-  --gold:    #c8a84b;    /* KPI numbers, decorative accents, gold bar */
+  --teal:    #0abde3;    /* Category C / formulas */
+  --gold:    #7fb3d5;    /* Decorative highlight, soft blue accent */
   --red:     #c0392b;    /* Alerts, negative values */
-  --orange:  #d35400;    /* Warnings, secondary emphasis */
-  --purple:  #7d3c98;    /* Category B / SGI */
-  --green:   #1e8449;    /* Positive values */
+  --orange:  #e67e22;    /* Warnings, secondary emphasis */
+  --purple:  #6c5ce7;    /* Category B / SGI */
+  --green:   #27ae60;    /* Positive values */
   /* Neutral */
-  --text:    #1a2332;    /* Primary text */
-  --sub:     #4a5568;    /* Secondary text */
-  --muted:   #8090a0;    /* Labels, captions */
-  --border:  #dde4ee;    /* Card borders */
-  --soft:    #f5f8fc;    /* Light backgrounds */
+  --text:    #1f2937;    /* Primary text */
+  --sub:     #5b6472;    /* Secondary text */
+  --muted:   #8a94a6;    /* Labels, captions */
+  --border:  #d8e2ee;    /* Card borders */
+  --soft:    #f4f6f9;    /* Light backgrounds */
 }
 ```
 
@@ -40,15 +223,16 @@ Generate standalone HTML slide files (1280×720px) following an academic defense
 ```css
 .slide {
   width: 1280px; height: 720px;
-  background: #eef2f7;
-  background-image: radial-gradient(#d8e0eb 1px, transparent 1px);
-  background-size: 22px 22px;            /* Dot pattern */
+  background: #ffffff;
+  background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
+  background-size: 20px 20px;            /* Dot pattern */
   display: flex; flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0,41,82,.2), 0 4px 16px rgba(0,0,0,.1);
-  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
 }
 ```
+
+The outermost `.slide` container should **not** use rounded corners. Keep the slide edge rectangular; rounded corners are allowed only for internal cards, chips, and panels.
 
 ### Page Structure
 
@@ -61,12 +245,14 @@ Generate standalone HTML slide files (1280×720px) following an academic defense
 
 ### Logo
 
-Logo file: `assets/logo.png` (230×65px, object-fit: cover)
+Logo file inside the generated deck: `slides/assets/logo.png` (230×65px, object-fit: cover)
 
-Place in header-right area:
+**The logo is mandatory on every content slide.** Place it in the header-right area:
 ```html
-<img class="logo" src="logo.png" alt="浙江大学工程师学院">
+<img class="logo" src="assets/logo.png" alt="浙江大学工程师学院">
 ```
+
+> **Deck asset rule:** when outputting a slide deck, always copy the bundled logo into `slides/assets/logo.png`, then reference it from every slide with `src="assets/logo.png"`. Do not rely on assets outside the `slides/` directory.
 
 ## HTML Template (Full Boilerplate)
 
@@ -85,37 +271,37 @@ Place in header-right area:
   onload="renderMathInElement(document.body,{delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}]})"></script>
 <style>
 :root {
-  --navy:#002952; --blue:#1a6fa8; --accent:#2980b9;
-  --teal:#0097b2; --gold:#c8a84b; --red:#c0392b;
-  --orange:#d35400; --purple:#7d3c98; --green:#1e8449;
-  --text:#1a2332; --sub:#4a5568; --muted:#8090a0;
-  --border:#dde4ee; --soft:#f5f8fc;
+  --navy:#003366; --blue:#004488; --accent:#3498db;
+  --teal:#0abde3; --gold:#7fb3d5; --red:#c0392b;
+  --orange:#e67e22; --purple:#6c5ce7; --green:#27ae60;
+  --text:#1f2937; --sub:#5b6472; --muted:#8a94a6;
+  --border:#d8e2ee; --soft:#f4f6f9;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: 'PingFang SC','Microsoft YaHei',sans-serif;
-  background: #c8d0dc;
+  background: #dcdcdc;
   display: flex; flex-direction: column; align-items: center;
   gap: 48px; padding: 48px 0;
 }
 
 /* ── Slide Shell ── */
-.slide { width:1280px; height:720px; background:#eef2f7;
-  background-image:radial-gradient(#d8e0eb 1px,transparent 1px);
-  background-size:22px 22px; display:flex; flex-direction:column;
-  overflow:hidden; box-shadow:0 24px 64px rgba(0,41,82,.2),0 4px 16px rgba(0,0,0,.1);
-  flex-shrink:0; border-radius:4px; }
+.slide { width:1280px; height:720px; background:#fff;
+  background-image:radial-gradient(#e0e0e0 1px,transparent 1px);
+  background-size:20px 20px; display:flex; flex-direction:column;
+  overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.15);
+  flex-shrink:0; }
 
 /* ── Header ── */
 .slide-header { height:72px; display:flex; align-items:stretch; flex-shrink:0; overflow:hidden; }
 .slide-header .header-left {
-  flex:1; background:linear-gradient(105deg,var(--navy) 0%,#003d7a 55%,#005090 100%);
+  flex:1; background:linear-gradient(90deg,var(--navy) 0%,var(--blue) 100%);
   color:#fff; padding:0 32px 0 38px; display:flex; align-items:center;
   position:relative; overflow:hidden;
 }
 .slide-header .header-left::after {
   content:''; position:absolute; bottom:0; left:0; right:0; height:3px;
-  background:linear-gradient(90deg,var(--gold) 0%,rgba(200,168,75,.25) 70%,transparent 100%);
+  background:linear-gradient(90deg,var(--accent) 0%,rgba(52,152,219,.2) 72%,transparent 100%);
 }
 .slide-header .deco-ring {
   position:absolute; right:40px; top:-28px; width:110px; height:110px;
@@ -123,15 +309,15 @@ body {
 }
 .slide-header h1 { font-size:22px; font-weight:700; letter-spacing:.6px; }
 .slide-header .header-right {
-  width:268px; flex-shrink:0; background:#eef2f7;
-  border-left:1px solid #d0dae8; display:flex; align-items:center;
+  width:268px; flex-shrink:0; background:#fff;
+  border-left:1px solid var(--border); display:flex; align-items:center;
   justify-content:center; padding:0 16px;
 }
-.slide-header .logo { width:230px; height:65px; object-fit:cover; }
+.slide-header .logo { width:230px; height:65px; object-fit:contain; }
 
 /* ── Footer ── */
 .slide-footer {
-  height:34px; background:#e4eaf3; border-top:1px solid #d0dae8;
+  height:34px; background:var(--soft); border-top:1px solid var(--border);
   display:flex; justify-content:space-between; align-items:center;
   padding:0 38px; color:var(--muted); font-size:12px; flex-shrink:0;
 }
@@ -156,7 +342,8 @@ body {
       <h1>X.X 章节标题</h1>
     </div>
     <div class="header-right">
-      <img class="logo" src="logo.png" alt="浙江大学工程师学院">
+      <!-- REQUIRED: logo must always be present; adjust src path as needed -->
+      <img class="logo" src="assets/logo.png" alt="浙江大学工程师学院">
     </div>
   </div>
 
@@ -199,17 +386,17 @@ Navy gradient banner with icon, text, and KPI numbers. Height: 52px.
 ```
 
 ```css
-.intro-banner { background:linear-gradient(105deg,var(--navy) 0%,#003d7a 55%,#005090 100%);
+.intro-banner { background:linear-gradient(90deg,var(--navy) 0%,var(--blue) 100%);
   border-radius:10px; padding:0 20px; display:flex; align-items:center; gap:20px;
   height:52px; position:relative; overflow:hidden; }
 .intro-banner::before { content:''; position:absolute; top:0;left:0;right:0; height:2px;
-  background:linear-gradient(90deg,var(--gold),rgba(200,168,75,.25),transparent); }
-.intro-icon { width:32px;height:32px; border-radius:9px; background:rgba(200,168,75,.2);
-  border:1px solid rgba(200,168,75,.4); display:flex;align-items:center;justify-content:center;
-  font-size:14px; color:var(--gold); }
+  background:linear-gradient(90deg,var(--accent),rgba(52,152,219,.2),transparent); }
+.intro-icon { width:32px;height:32px; border-radius:9px; background:rgba(52,152,219,.18);
+  border:1px solid rgba(52,152,219,.35); display:flex;align-items:center;justify-content:center;
+  font-size:14px; color:var(--accent); }
 .intro-text { font-size:13px; color:rgba(255,255,255,.85); line-height:1.5; flex:1; }
 .intro-text strong { color:#fff; font-weight:600; }
-.ik-num { font-size:20px; font-weight:900; color:var(--gold); line-height:1; }
+.ik-num { font-size:20px; font-weight:900; color:#8fd3ff; line-height:1; }
 .ik-lbl { font-size:11px; color:rgba(255,255,255,.6); margin-top:2px; }
 ```
 
@@ -350,14 +537,97 @@ Badges: `.ev-ok` (green), `.ev-good` (blue), `.ev-normal` (orange)
 
 | Element | Size | Weight | Color |
 |---------|------|--------|-------|
-| Header h1 | 22px | 700 | white |
-| Card title h3/h4 | 14-16px | 700 | --navy |
-| Body text | 13-14px | 400 | --sub |
-| KPI number | 18-20px | 800-900 | --gold / --accent |
-| KPI label | 11-12px | 400 | --muted / rgba(white,.6) |
-| Table data | 11-13px | 400-600 | --sub |
+| Header h1 | 22-28px | 700 | white |
+| Hero / takeaway | 27-40px | 800-900 | --navy / white |
+| Card title h3/h4 | 18-22px | 700-800 | --navy |
+| Body text | 14-16px | 400 | --sub |
+| KPI number | 20-24px | 800-900 | --gold / --accent |
+| KPI label | 12-13px | 400 | --muted / rgba(white,.6) |
+| Table header | 13-14px | 600 | --navy |
+| Table data | 14-15px | 400-600 | --sub |
 | Footer | 12px | 400 | --muted |
-| **Minimum font size** | **11px** | | |
+| **Minimum font size** | **14px** (body/card), **12px** (footer/label) | | |
+
+## Style Constraints
+
+- **No emoji** — Never use emoji in slides. Use Font Awesome icons (`<i class="fas fa-xxx">`) for all iconography.
+- **No card border decoration** — Cards should NOT use colored `border` or `border-left` for decoration (looks dated). Use subtle `box-shadow` or background tinting instead. Exception: the header accent bar (`::after`).
+- **Minimum font size** — Body text, card content, table data, and list content must be ≥ 14px. Only footer, badges, decorative labels, axis labels, and auxiliary metadata may go down to 12px.
+- **No direct Markdown dumping** — Do not paste long Markdown paragraphs into cards. Convert them into a core argument, support structure, and matching chart/evidence first.
+- **No overloaded slides** — Avoid combining more than 3 main information modules on one page.
+- **No empty slides** — The body should feel intentionally filled through content, hierarchy, and visual layers; do not leave large blank regions unless they support a strong visual center.
+
+## Acceptance Checks
+
+Run acceptance checks after generating or modifying slides. A slide should not be considered complete until it passes typography, density, and visual-quality checks.
+
+### Hard Checks
+
+- **Typography**: body/card/list/table text must be at least 14px in computed browser rendering.
+- **Core argument**: every content slide must contain a clear argument, message, or communication purpose.
+- **Density**: the main body must contain enough visible content and visual structure; avoid sparse pages with one small card floating in empty space.
+- **Overload**: a slide with table + checklist + KPI + long note is overloaded and should be split.
+- **Logo**: every content slide must include the required logo.
+
+### Recommended Thresholds
+
+| Check | Target |
+|-------|--------|
+| Body minimum font | ≥ 14px |
+| Auxiliary minimum font | ≥ 12px |
+| Main modules per slide | 2–4 |
+| Core argument | clear and visually emphasized |
+| Support points | enough to support the argument without crowding |
+| Evidence | chart/data/case/logic must support the argument |
+| Timeline nodes | ≤ 6 |
+| Checklist items | ≤ 6 |
+| Table size | ≤ 4 rows × 4 columns, otherwise split or convert to cards |
+
+### Validation Script
+
+Use the bundled validator for computed font-size and approximate visual density checks:
+
+```bash
+node scripts/validate-html-slide.mjs slides/slide-01.html slides/slide-02.html
+```
+
+Options:
+
+```bash
+node scripts/validate-html-slide.mjs slides.html --min-body-font 14 --min-density 0.32 --max-density 0.88
+```
+
+The script uses Playwright when available, because font size must be checked from computed browser styles rather than raw CSS text. Footer, badges, chips, labels, and metadata are treated as auxiliary text and may use 12–13px.
+
+### Keyboard Page Switching Script
+
+After generating individual slide HTML files, inject keyboard-only page switching:
+
+```bash
+node scripts/add-slide-keyboard-nav.mjs slides
+```
+
+This script:
+
+- Scans `slides/*.html`.
+- Sorts files naturally (`slide-01.html`, `slide-02.html`, ...).
+- Adds no visible navigation elements.
+- Enables keyboard navigation: `Enter` and `ArrowDown` go next; `ArrowUp` goes previous.
+- Keeps every slide as an independent HTML page.
+
+### Asset Copy Script
+
+Before delivery, copy the bundled logo into the generated `slides/` directory:
+
+```bash
+node scripts/copy-slide-assets.mjs slides
+```
+
+This script:
+
+- Creates `slides/assets/` when needed.
+- Copies the bundled skill logo to `slides/assets/logo.png`.
+- Ensures generated slides can travel as a self-contained folder.
 
 ## Font Stack
 
@@ -367,18 +637,29 @@ font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
 ## File Naming
 
-- One HTML file per slide: `slide-{section}.html`
-- Examples: `slide-2.html`, `slide-10A.html`, `slide-17C.html`
-- Multi-slide files (for related slides): `slides_{topic}.html`
+- Deck output directory: `slides/`
+- Deck outline file: `slides/大纲.md`
+- Deck asset directory: `slides/assets/`
+- One HTML file per slide: `slides/slide-{nn}.html`
+- Use zero-padded numbering: `slide-01.html`, `slide-02.html`, `slide-03.html`
+- Optional chapter suffix: `slide-03-plan.html`, `slide-04-review.html`
+- Do not create `slides_{topic}.html` multi-slide bundles unless explicitly requested.
 
 ## New Slide Workflow
 
-1. Copy the full boilerplate template above
-2. Set `<title>` and header `<h1>` to match section
-3. Add page-specific CSS after the `/* PAGE-SPECIFIC CSS */` comment
-4. Build body content using component library
-5. Update footer text if needed
-6. Save as `slide-{id}.html`
+1. Create `slide-outline` from source Markdown.
+2. Present the outline page by page to the user and revise it until confirmed.
+3. Save the confirmed outline to `slides/大纲.md`.
+4. Apply split rules and choose page types from `slides/大纲.md`.
+5. Choose visual mode: `academic-defense` or `tech-share`.
+6. Copy the full boilerplate template above or V2 template.
+7. Set `<title>` and header `<h1>` to match the planned page.
+8. Add page-specific CSS after the `/* PAGE-SPECIFIC CSS */` comment.
+9. Build body content using component library and visual-mode rules.
+10. Run acceptance checks, especially typography and density checks.
+11. Save each page as `slides/slide-{nn}.html`.
+12. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
+13. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
 
 ## PPTX Conversion (Optional)
 
@@ -394,4 +675,5 @@ await pptx.writeFile({ fileName: 'output.pptx' });
 
 ## Assets
 
-- `assets/logo.png` - University logo (230×65px)
+- Bundled source logo: `assets/logo.png`
+- Generated deck logo: `slides/assets/logo.png`
