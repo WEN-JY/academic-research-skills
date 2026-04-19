@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{SLIDE_TITLE}}</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+  --navy:#071f3a;
+  --navy-2:#0b3764;
+  --blue:#1567a5;
+  --gold:#c7a55a;
+  --gold-2:#e3cc8a;
+  --text:#172033;
+  --sub:#526173;
+  --muted:#8b98a8;
+  --card:#ffffff;
+  --line:#dce5ef;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+  background:#c9d1dc;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:48px;
+  padding:48px 0;
+}
+.slide {
+  width:1280px;
+  height:720px;
+  overflow:hidden;
+  position:relative;
+  flex-shrink:0;
+  box-shadow:0 30px 80px rgba(7,31,58,.26), 0 6px 20px rgba(0,0,0,.12);
+}
+.content {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(21,103,165,.13) 0%, transparent 28%),
+    linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);
+  display:flex;
+  flex-direction:column;
+}
+.topbar {
+  height:86px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 0 0 58px;
+  background:linear-gradient(105deg, var(--navy) 0%, #0a3158 52%, #0d4776 100%);
+  color:#fff;
+  position:relative;
+}
+.topbar::after {
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:4px;
+  background:linear-gradient(90deg, var(--gold), rgba(227,204,138,.16), transparent);
+}
+.chapter {
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding-right:300px;
+}
+.chapter-no {
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:rgba(227,204,138,.16);
+  border:1px solid rgba(227,204,138,.46);
+  color:var(--gold-2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:18px;
+  flex-shrink:0;
+}
+.chapter-title h1 {
+  font-size:27px;
+  line-height:1.2;
+  letter-spacing:.02em;
+}
+.chapter-title p {
+  margin-top:5px;
+  font-size:13px;
+  color:rgba(255,255,255,.62);
+  letter-spacing:.04em;
+}
+.topbar-logo {
+  position:absolute;
+  top:0;
+  right:0;
+  width:268px;
+  height:86px;
+  background:rgba(255,255,255,.96);
+  border-left:1px solid rgba(255,255,255,.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.topbar-logo img {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+  background:rgba(255,255,255,.96);
+  border-radius:0;
+  padding:0 14px;
+}
+.stage {
+  flex:1;
+  padding:26px 48px 18px;
+  display:grid;
+  grid-template-columns:1.04fr .96fr;
+  grid-template-rows:auto 1fr auto;
+  gap:16px;
+  min-height:0;
+}
+.hero-strip {
+  grid-column:1 / 3;
+  background:#fff;
+  border-radius:18px;
+  padding:22px 28px;
+  box-shadow:0 14px 36px rgba(7,31,58,.10);
+  display:flex;
+  align-items:center;
+  gap:26px;
+  position:relative;
+  overflow:hidden;
+}
+.hero-strip::before {
+  content:'';
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:7px;
+  background:linear-gradient(180deg, var(--gold), var(--blue));
+}
+.hero-label {
+  min-width:170px;
+}
+.hero-label .small {
+  font-size:13px;
+  color:var(--muted);
+  font-weight:700;
+  letter-spacing:.08em;
+}
+.hero-label .big {
+  margin-top:8px;
+  font-size:30px;
+  font-weight:900;
+  color:var(--navy);
+}
+.hero-text {
+  flex:1;
+  font-size:18px;
+  line-height:1.65;
+  color:var(--sub);
+}
+.hero-text strong {
+  color:var(--navy);
+}
+.hero-badge {
+  width:132px;
+  height:78px;
+  border-radius:18px;
+  background:linear-gradient(135deg, rgba(199,165,90,.18), rgba(21,103,165,.10));
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.hero-badge b {
+  font-size:30px;
+  color:var(--gold);
+  line-height:1;
+}
+.hero-badge span {
+  margin-top:6px;
+  color:var(--muted);
+  font-size:12px;
+}
+.main-card {
+  background:#fff;
+  border-radius:20px;
+  padding:26px 28px;
+  box-shadow:0 12px 32px rgba(7,31,58,.09);
+  min-height:0;
+}
+.card-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+.card-head h2 {
+  font-size:22px;
+  color:var(--navy);
+  letter-spacing:.01em;
+}
+.tag {
+  height:28px;
+  padding:0 12px;
+  border-radius:999px;
+  background:rgba(199,165,90,.14);
+  color:#92722d;
+  font-size:12px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+}
+.principles {
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+.principle {
+  display:grid;
+  grid-template-columns:42px 1fr;
+  gap:14px;
+  align-items:flex-start;
+}
+.p-num {
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  background:linear-gradient(135deg, var(--navy), var(--blue));
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+}
+.p-body h3 {
+  font-size:17px;
+  color:var(--navy);
+  margin-bottom:5px;
+}
+.p-body p {
+  font-size:15px;
+  color:var(--sub);
+  line-height:1.55;
+}
+.side-panel {
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  min-height:0;
+}
+.timeline-card {
+  background:linear-gradient(135deg, #0b2c50, #0d4776);
+  color:#fff;
+  border-radius:20px;
+  padding:24px 26px;
+  box-shadow:0 16px 38px rgba(7,31,58,.18);
+  flex:1;
+}
+.timeline-title {
+  font-size:18px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.timeline {
+  display:flex;
+  flex-direction:column;
+  gap:13px;
+}
+.time-row {
+  display:grid;
+  grid-template-columns:76px 1fr auto;
+  gap:12px;
+  align-items:center;
+}
+.time-row .date {
+  color:var(--gold-2);
+  font-size:13px;
+  font-weight:800;
+}
+.time-row .name {
+  color:rgba(255,255,255,.84);
+  font-size:14px;
+}
+.time-row .state {
+  font-size:11px;
+  color:rgba(255,255,255,.58);
+}
+.quote-card {
+  background:#fff;
+  border-radius:20px;
+  padding:22px 24px;
+  box-shadow:0 12px 32px rgba(7,31,58,.09);
+}
+.quote-card .quote {
+  font-size:20px;
+  line-height:1.58;
+  font-weight:800;
+  color:var(--navy);
+}
+.quote-card .note {
+  margin-top:12px;
+  font-size:14px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.bottom-metrics {
+  grid-column:1 / 3;
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:14px;
+}
+.metric {
+  background:rgba(255,255,255,.74);
+  border-radius:16px;
+  padding:15px 18px;
+  box-shadow:0 8px 20px rgba(7,31,58,.07);
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+.metric i {
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(21,103,165,.10);
+  color:var(--blue);
+  flex-shrink:0;
+}
+.metric b {
+  display:block;
+  color:var(--navy);
+  font-size:14px;
+}
+.metric span {
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:12px;
+}
+.content-footer {
+  height:32px;
+  padding:0 48px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:var(--muted);
+  font-size:12px;
+  border-top:1px solid rgba(124,142,164,.18);
+}
+</style>
+</head>
+<body>
+
+<section class="slide content">
+  <header class="topbar">
+    <div class="chapter">
+      <div class="chapter-no">{{CHAPTER_NO}}</div>
+      <div class="chapter-title">
+        <h1>{{CHAPTER_TITLE}}</h1>
+        <p>{{CHAPTER_SUBTITLE}}</p>
+      </div>
+    </div>
+    <div class="topbar-logo">
+      <img src="../assets/logo.png" alt="浙江大学工程师学院">
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="hero-strip">
+      <div class="hero-label">
+        <div class="small">{{HERO_KICKER}}</div>
+        <div class="big">{{HERO_LABEL}}</div>
+      </div>
+      <div class="hero-text">
+        {{HERO_TEXT}}
+      </div>
+      <div class="hero-badge">
+        <b>{{HERO_NUMBER}}</b>
+        <span>{{HERO_NUMBER_LABEL}}</span>
+      </div>
+    </section>
+
+    <section class="main-card">
+      <div class="card-head">
+        <h2>{{MAIN_CARD_TITLE}}</h2>
+        <div class="tag">{{MAIN_CARD_TAG}}</div>
+      </div>
+      <div class="principles">
+        <div class="principle">
+          <div class="p-num">01</div>
+          <div class="p-body">
+            <h3>{{POINT_1_TITLE}}</h3>
+            <p>{{POINT_1_DESC}}</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="p-num">02</div>
+          <div class="p-body">
+            <h3>{{POINT_2_TITLE}}</h3>
+            <p>{{POINT_2_DESC}}</p>
+          </div>
+        </div>
+        <div class="principle">
+          <div class="p-num">03</div>
+          <div class="p-body">
+            <h3>{{POINT_3_TITLE}}</h3>
+            <p>{{POINT_3_DESC}}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <section class="timeline-card">
+        <div class="timeline-title"><i class="fas fa-route"></i> {{TIMELINE_TITLE}}</div>
+        <div class="timeline">
+          <div class="time-row"><div class="date">{{DATE_1}}</div><div class="name">{{MILESTONE_1}}</div><div class="state">{{STATE_1}}</div></div>
+          <div class="time-row"><div class="date">{{DATE_2}}</div><div class="name">{{MILESTONE_2}}</div><div class="state">{{STATE_2}}</div></div>
+          <div class="time-row"><div class="date">{{DATE_3}}</div><div class="name">{{MILESTONE_3}}</div><div class="state">{{STATE_3}}</div></div>
+          <div class="time-row"><div class="date">{{DATE_4}}</div><div class="name">{{MILESTONE_4}}</div><div class="state">{{STATE_4}}</div></div>
+          <div class="time-row"><div class="date">{{DATE_5}}</div><div class="name">{{MILESTONE_5}}</div><div class="state">{{STATE_5}}</div></div>
+        </div>
+      </section>
+      <section class="quote-card">
+        <div class="quote">{{QUOTE}}</div>
+        <div class="note">{{QUOTE_NOTE}}</div>
+      </section>
+    </aside>
+
+    <section class="bottom-metrics">
+      <div class="metric"><i class="fas fa-layer-group"></i><div><b>{{METRIC_1_TITLE}}</b><span>{{METRIC_1_DESC}}</span></div></div>
+      <div class="metric"><i class="fas fa-sort-numeric-down"></i><div><b>{{METRIC_2_TITLE}}</b><span>{{METRIC_2_DESC}}</span></div></div>
+      <div class="metric"><i class="fas fa-code-branch"></i><div><b>{{METRIC_3_TITLE}}</b><span>{{METRIC_3_DESC}}</span></div></div>
+      <div class="metric"><i class="fas fa-box-archive"></i><div><b>{{METRIC_4_TITLE}}</b><span>{{METRIC_4_DESC}}</span></div></div>
+    </section>
+  </main>
+
+  <footer class="content-footer">
+    <span>{{FOOTER_LEFT}}</span>
+    <span>{{FOOTER_RIGHT}}</span>
+  </footer>
+</section>
+
+</body>
+</html>
