@@ -11,12 +11,15 @@ Generate standalone HTML slide files (1280×720px) following an academic defense
 
 ## Mandatory Generation Workflow
 
-Do **not** generate HTML directly from long Markdown. First create a slide-level content plan, present the page-by-page outline to the user for confirmation, save the confirmed outline, then generate HTML, then validate the rendered page.
+Support two entry modes:
 
-1. **Content Planning Layer** — convert Markdown into a `slide-outline`.
-2. **User Confirmation Layer** — present the outline slide by slide and get user confirmation or revision requests.
-3. **Outline Persistence Layer** — save the confirmed outline to `slides/大纲.md`.
-4. **Layout Decision Layer** — choose page types and visual structure using the confirmed outline.
+- **No outline provided** — first create a slide-level content plan, present the page-by-page outline to the user for confirmation, save the confirmed outline, then generate HTML, then validate the rendered page.
+- **Outline already provided** — if the user already provides a page-by-page `slide-outline`, `slides/大纲.md`, or an equivalent slide plan, skip outline planning and confirmation, normalize the outline if needed, then generate HTML directly from that outline and validate the rendered page.
+
+1. **Content Planning Layer** — convert Markdown into a `slide-outline` when the user has not already provided one.
+2. **User Confirmation Layer** — present the outline slide by slide and get user confirmation or revision requests when the outline is newly created from source material.
+3. **Outline Persistence Layer** — save the confirmed or user-provided outline to `slides/大纲.md`.
+4. **Layout Decision Layer** — choose page types and visual structure using the confirmed or user-provided outline.
 5. **Visual Generation Layer** — apply the selected visual mode and component system.
 6. **Acceptance Layer** — validate typography, density, visual richness, and overload risk before delivery.
 
@@ -24,10 +27,11 @@ Output policy:
 
 - Generate **one HTML file per slide** by default.
 - Put all slide pages under a `slides/` directory.
-- Save the confirmed page-by-page outline to `slides/大纲.md` before HTML generation.
+- Save the confirmed or user-provided page-by-page outline to `slides/大纲.md` before HTML generation.
 - Copy deck assets into `slides/assets/`, especially the required logo file at `slides/assets/logo.png`.
 - Do not put the whole deck into one giant HTML file unless the user explicitly requests a single-file deck.
 - Add keyboard-only page switching after slide generation. Do **not** add visible navigation buttons or navigation overlays.
+- When the user already has a usable outline, do not force a second outline-planning round before slide generation.
 
 ### 1. Content Planning Layer
 
@@ -48,7 +52,8 @@ For Markdown-based decks, first produce a `slide-outline` and use it as the sour
 
 Rules:
 
-- Every slide must have a clear **core argument** or communication purpose.
+- Most content slides must have a clear **core argument** or communication purpose.
+- Cover, section, agenda, Q&A transition, closing, and thank-you slides do not need a formal core argument as long as the page purpose is clear.
 - Pair the core argument with suitable evidence: chart, metric, timeline, case, comparison, quote, diagram, or structured reasoning.
 - Support points are flexible; use as many as the layout can carry clearly, but keep hierarchy obvious.
 - Multiple evidence forms are allowed when they serve the same core argument and do not compete for visual focus.
@@ -59,10 +64,11 @@ Rules:
 
 Before generating any HTML:
 
-- Output the outline to the user **page by page**.
-- Ask the user to confirm the outline or request changes.
-- Revise the outline until the user is satisfied.
-- Do not start HTML generation before the outline is confirmed, unless the user explicitly asks to skip confirmation.
+- If the outline is newly generated from source material, output it to the user **page by page**.
+- Ask the user to confirm the generated outline or request changes.
+- Revise the generated outline until the user is satisfied.
+- Do not start HTML generation before the generated outline is confirmed, unless the user explicitly asks to skip confirmation.
+- If the user already provides a page-by-page outline, treat it as confirmed input unless the user asks for optimization or restructuring.
 
 Recommended outline display format:
 
@@ -89,9 +95,15 @@ Recommended outline display format:
 After user confirmation:
 
 - Create the `slides/` directory if needed.
-- Save the final confirmed outline to `slides/大纲.md`.
+- Save the final confirmed outline or the normalized user-provided outline to `slides/大纲.md`.
 - Treat `slides/大纲.md` as the deck blueprint.
 - Generate all HTML slides from `slides/大纲.md`, not from the original long Markdown directly.
+
+When the user already has an outline:
+
+- Accept `slides/大纲.md`, pasted Markdown, YAML, or a page-by-page structured list as the source of truth.
+- Normalize field names if needed, but keep the original page order and intent.
+- Only ask for clarification if the outline lacks the minimum information required to distinguish slide boundaries or page purpose.
 
 ### 2. Split Rules
 
@@ -564,7 +576,8 @@ Run acceptance checks after generating or modifying slides. A slide should not b
 ### Hard Checks
 
 - **Typography**: body/card/list/table text must be at least 14px in computed browser rendering.
-- **Core argument**: every content slide must contain a clear argument, message, or communication purpose.
+- **Core argument**: most content slides should contain a clear argument, message, or communication purpose.
+- **Page-type exception**: cover, section, agenda, Q&A transition, closing, and thank-you slides may omit a formal core argument if the page purpose is visually obvious.
 - **Density**: the main body must contain enough visible content and visual structure; avoid sparse pages with one small card floating in empty space.
 - **Overload**: a slide with table + checklist + KPI + long note is overloaded and should be split.
 - **Logo**: every content slide must include the required logo.
@@ -576,7 +589,7 @@ Run acceptance checks after generating or modifying slides. A slide should not b
 | Body minimum font | ≥ 14px |
 | Auxiliary minimum font | ≥ 12px |
 | Main modules per slide | 2–4 |
-| Core argument | clear and visually emphasized |
+| Core argument | clear and visually emphasized on most content slides |
 | Support points | enough to support the argument without crowding |
 | Evidence | chart/data/case/logic must support the argument |
 | Timeline nodes | ≤ 6 |
@@ -647,6 +660,8 @@ font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
 ## New Slide Workflow
 
+### Route A: source material without outline
+
 1. Create `slide-outline` from source Markdown.
 2. Present the outline page by page to the user and revise it until confirmed.
 3. Save the confirmed outline to `slides/大纲.md`.
@@ -661,7 +676,25 @@ font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
 12. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
 13. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
 
+### Route B: existing outline provided by user
+
+1. Read the user-provided outline or `slides/大纲.md`.
+2. Normalize the outline into the expected page-by-page structure if needed.
+3. Save the normalized outline to `slides/大纲.md` when it is not already there.
+4. Apply split rules only when a page is obviously overloaded or the user asks for restructuring.
+5. Choose visual mode: `academic-defense` or `tech-share`.
+6. Copy the full boilerplate template above or V2 template.
+7. Set `<title>` and header `<h1>` to match each outline page.
+8. Add page-specific CSS after the `/* PAGE-SPECIFIC CSS */` comment.
+9. Build body content from the provided outline page by page.
+10. Run acceptance checks, especially typography and density checks.
+11. Save each page as `slides/slide-{nn}.html`.
+12. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
+13. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
+
 ## PPTX Conversion (Optional)
+
+If the user already provides an outline and asks for PPTX, follow **Route B** to generate the slide HTML files first, then convert the generated HTML slides to PPTX. Do not force a new outline-planning round before conversion.
 
 ```javascript
 const pptxgen = require('pptxgenjs');
