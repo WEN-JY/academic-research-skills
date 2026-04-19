@@ -33,6 +33,29 @@ Split content when multiple core arguments compete, support points become crowde
 
 Before generating HTML, output the outline to the user page by page and get confirmation when the outline is newly generated from source material. If the user already provides a usable outline, treat it as the source of truth unless the user asks for restructuring. In both cases, write the working outline to `slides/大纲.md` and generate slides from `slides/大纲.md` rather than directly from the source Markdown.
 
+## Presentation Quality Goals
+
+- Prioritize **beauty + expressive power**, not just visual consistency
+- Prefer **diagrams over paragraphs** whenever the content has structure, sequence, causality, or hierarchy
+- Keep text minimal: title, takeaway, labels, annotations, and a few supporting points only
+- Make deck rhythm visible: alternate diagram pages, conclusion pages, comparison pages, and transition pages rather than repeating one content skeleton
+
+## Visual-First Rules
+
+- Convert process, method, workflow, and action sequence content into **flow diagrams** first
+- Convert causal mechanism, research framework, influence path, and decision logic content into **logic diagrams** first
+- Convert stage evolution, project milestones, and temporal progression into **timeline / sequence diagrams** first
+- Convert system composition, architecture, module hierarchy, and layered explanation into **structure diagrams** first
+- If content can be explained with a diagram, do not default to bullet-heavy cards
+- Do not make most content slides use the same `hero + banner + two-column cards` skeleton
+
+## Deck Rhythm Rules
+
+- Adjacent slides should differ clearly in at least one dimension: main layout, evidence type, visual center, or information organization
+- Do not use the same page skeleton for 3 consecutive slides
+- Diagram-centric pages should be common in the deck, not occasional decoration
+- Use text-heavy cards only when the content cannot be expressed more clearly with a diagram or compact table
+
 ## Visual Modes
 
 - `academic-defense`: formal, calm, thesis/report oriented.
@@ -86,24 +109,41 @@ V2 content headers use an 86px topbar. The logo block is mandatory, `268px × 86
 | Problem 2×2 | Four-quadrant issues | `.problem-cards-2x2`, `.pcard`, `.pi-blue/.pi-red` |
 | Cause Banner | Navy root-cause strip | `.cause-banner`, `.cause-item` |
 
+## Preferred Visual Page Types
+
+- `process-flow` — for workflows, methods, implementation paths, or action sequences
+- `logic-map` — for causal chains, analytical logic, research frameworks, or mechanism explanation
+- `timeline-sequence` — for phased evolution, milestones, or time-ordered events
+- `structure-diagram` — for architecture, hierarchy, module decomposition, or layered systems
+- `comparison-matrix` — for before/after, alternatives, stage comparison, or scheme trade-offs
+- `one-chart-one-message` — for one key visual plus one strong takeaway
+- `quote-insight` — for one conclusion, one key statement, and a compact evidence strip
+- `qa-prep` — for答辩问题、质询预判、回答框架
+
 ## New Slide Steps
 
 1. If needed, create `slide-outline`
 2. If needed, output the outline page by page and confirm it with the user
 3. Save the confirmed or user-provided outline to `slides/大纲.md`
-4. Apply split rules and select page types
+4. Apply split rules and select page types with a **visual-first** preference
 5. Choose `academic-defense` or `tech-share`
-6. Build body from component library
-7. Run acceptance checks
-8. Save each page as `slides/slide-{nn}.html`
-9. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`
-10. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching
+6. Plan deck rhythm so adjacent slides do not repeat the same skeleton
+7. Prefer process-flow / logic-map / timeline-sequence / structure-diagram layouts before defaulting to card grids
+8. Build body from the component library with minimal text and a clear visual center
+9. Run acceptance checks
+10. Save each page as `slides/slide-{nn}.html`
+11. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`
+12. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching
 
 ## Acceptance Checks
 
 - Body/card/list/table text below 14px fails validation.
 - Sparse slides fail density review; fill pages with content hierarchy and visual layers rather than plain empty space.
 - Overloaded slides fail review; split pages instead of combining table + checklist + KPI + long note.
+- Slides that should be expressed as process / logic / timeline / structure diagrams but remain bullet-heavy fail review.
+- Repeating the same main skeleton across 3 consecutive slides fails deck-level review.
+- Slides without a clear primary visual module fail review.
+- Text should be concise; long paragraphs or Markdown-like dumping fail review.
 - Use `node scripts/validate-html-slide.mjs path/to/slides.html` for computed font-size and approximate density checks.
 - Slides must reference the bundled deck logo with `src="assets/logo.png"`.
 - Use `node scripts/add-slide-keyboard-nav.mjs slides` after generation so every slide supports `Enter` / `ArrowDown` next and `ArrowUp` previous.
