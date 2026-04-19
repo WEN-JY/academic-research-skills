@@ -31,6 +31,7 @@ Output policy:
 - Save the confirmed or user-provided page-by-page outline to `slides/大纲.md` before HTML generation.
 - Copy deck assets into `slides/assets/`, especially the required logo file at `slides/assets/logo.png`.
 - Do not put the whole deck into one giant HTML file unless the user explicitly requests a single-file deck.
+- Treat HTML as the primary artifact. Treat PPTX as a derived export generated from the completed `slides/` directory.
 - Add keyboard-only page switching after slide generation. Do **not** add visible navigation buttons or navigation overlays.
 - When the user already has a usable outline, do not force a second outline-planning round before slide generation.
 
@@ -634,6 +635,7 @@ Run acceptance checks after generating or modifying slides. A slide should not b
 - **Deck rhythm**: repeating the same main skeleton across 3 consecutive slides fails deck-level review.
 - **Text control**: long paragraph-style explanation on content slides fails review unless the page is explicitly a quote or narrative transition page.
 - **Primary visual center**: every slide should have one obvious dominant visual module.
+- **PPTX export fidelity**: screenshot-based export should capture the `.slide` container at 16:9 and preserve slide order.
 
 ### Recommended Thresholds
 
@@ -650,6 +652,7 @@ Run acceptance checks after generating or modifying slides. A slide should not b
 | Table size | ≤ 4 rows × 4 columns, otherwise split or convert to cards |
 | Consecutive same skeleton | ≤ 2 |
 | Diagram-oriented content ratio | high for process / logic / sequence / structure slides |
+| Screenshot export order | same as natural `slide-{nn}.html` order |
 
 ### Validation Script
 
@@ -697,6 +700,50 @@ This script:
 - Copies the bundled skill logo to `slides/assets/logo.png`.
 - Ensures generated slides can travel as a self-contained folder.
 
+### Screenshot PPTX Export Script
+
+After the HTML deck is complete, use the bundled exporter to convert `slides/slide-*.html` into a high-fidelity screenshot-based PPTX:
+
+```bash
+node scripts/export-slides-to-pptx.mjs slides
+```
+
+Useful options:
+
+```bash
+node scripts/export-slides-to-pptx.mjs slides \
+  --output slides/export/答辩稿.pptx \
+  --from 1 \
+  --to 20 \
+  --scale 2 \
+  --wait 300
+```
+
+This script:
+
+- Scans `slides/slide-*.html`
+- Sorts slides naturally
+- Renders each slide with Playwright
+- Waits for fonts and layout stabilization
+- Captures the `.slide` container only
+- Writes screenshots to `slides/export/images/`
+- Packs screenshots into a 16:9 PPTX with `pptxgenjs`
+
+Recommended defaults:
+
+- Viewport: `1280×720`
+- Screenshot scale: `2`
+- Output PPTX: `slides/export/deck.pptx`
+- Screenshot format: `png`
+
+Dependency note:
+
+- `playwright` is required for browser rendering
+- `pptxgenjs` is required for PPTX packaging
+- If Playwright is installed but Chromium is missing, run `npx playwright install chromium`
+
+The exported PPTX is display-first and visually faithful, but it is not guaranteed to be fully editable in PowerPoint.
+
 ## Font Stack
 
 ```css
@@ -732,6 +779,7 @@ font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
 13. Save each page as `slides/slide-{nn}.html`.
 14. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
 15. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
+16. If the user requests PPTX, run `node scripts/export-slides-to-pptx.mjs slides` after the HTML deck is complete.
 
 ### Route B: existing outline provided by user
 
@@ -750,20 +798,21 @@ font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
 13. Save each page as `slides/slide-{nn}.html`.
 14. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
 15. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
+16. If the user requests PPTX, run `node scripts/export-slides-to-pptx.mjs slides` after the HTML deck is complete.
 
 ## PPTX Conversion (Optional)
 
-If the user already provides an outline and asks for PPTX, follow **Route B** to generate the slide HTML files first, then convert the generated HTML slides to PPTX. Do not force a new outline-planning round before conversion.
+If the user already provides an outline and asks for PPTX, follow **Route B** to generate the slide HTML files first, then export the completed `slides/` directory to PPTX.
 
-```javascript
-const pptxgen = require('pptxgenjs');
-const html2pptx = require('./.claude/skills/pptx/scripts/html2pptx.js');
+Default route:
 
-const pptx = new pptxgen();
-pptx.layout = 'LAYOUT_16x9';
-await html2pptx('slide-2.html', pptx);
-await pptx.writeFile({ fileName: 'output.pptx' });
+```bash
+node scripts/export-slides-to-pptx.mjs slides
 ```
+
+This default route generates a screenshot-based PPTX: it preserves visual fidelity, but the slide content is not guaranteed to be editable as native PowerPoint text and shapes.
+
+Only use editable PPT reconstruction when the user explicitly asks for editability and accepts reduced layout fidelity.
 
 ## Assets
 
