@@ -19,9 +19,10 @@ Support two entry modes:
 1. **Content Planning Layer** — convert Markdown into a `slide-outline` when the user has not already provided one.
 2. **User Confirmation Layer** — present the outline slide by slide and get user confirmation or revision requests when the outline is newly created from source material.
 3. **Outline Persistence Layer** — save the confirmed or user-provided outline to `slides/大纲.md`.
-4. **Layout Decision Layer** — choose page types and visual structure using the confirmed or user-provided outline.
-5. **Visual Generation Layer** — apply the selected visual mode and component system.
-6. **Acceptance Layer** — validate typography, density, visual richness, and overload risk before delivery.
+4. **Deck Rhythm Layer** — plan page-to-page pacing so the deck alternates visual structures and does not overuse one layout skeleton.
+5. **Layout Decision Layer** — choose page types and visual structure using the confirmed or user-provided outline, with a visual-first bias.
+6. **Visual Generation Layer** — apply the selected visual mode and component system, prioritizing diagrams over text-heavy cards.
+7. **Acceptance Layer** — validate typography, density, visual richness, overload risk, and deck-level rhythm before delivery.
 
 Output policy:
 
@@ -30,6 +31,7 @@ Output policy:
 - Save the confirmed or user-provided page-by-page outline to `slides/大纲.md` before HTML generation.
 - Copy deck assets into `slides/assets/`, especially the required logo file at `slides/assets/logo.png`.
 - Do not put the whole deck into one giant HTML file unless the user explicitly requests a single-file deck.
+- Treat HTML as the primary artifact. Treat PPTX as a derived export generated from the completed `slides/` directory.
 - Add keyboard-only page switching after slide generation. Do **not** add visible navigation buttons or navigation overlays.
 - When the user already has a usable outline, do not force a second outline-planning round before slide generation.
 
@@ -55,10 +57,12 @@ Rules:
 - Most content slides must have a clear **core argument** or communication purpose.
 - Cover, section, agenda, Q&A transition, closing, and thank-you slides do not need a formal core argument as long as the page purpose is clear.
 - Pair the core argument with suitable evidence: chart, metric, timeline, case, comparison, quote, diagram, or structured reasoning.
+- Prefer **diagram-first expression**: if the idea contains process, causality, sequence, or hierarchy, convert it into a visual structure before adding supporting text.
 - Support points are flexible; use as many as the layout can carry clearly, but keep hierarchy obvious.
 - Multiple evidence forms are allowed when they serve the same core argument and do not compete for visual focus.
 - Do not mix timeline + KPI + table + checklist on the same slide unless their relationship is clear and one visual hierarchy dominates.
 - If the source content contains narrative and analysis at the same time, split it into separate story and insight slides.
+- Keep text concise. Most content slides should retain only title, takeaway, labels, and short annotations rather than paragraph-style explanation.
 
 ### 1.5 User Confirmation Layer
 
@@ -120,6 +124,19 @@ Split the source content into multiple slides when any of the following is true:
 
 When splitting, optimize for **single-slide clarity**, not for fewer pages.
 
+### 2.5 Visual-First Mapping Rules
+
+When choosing how to express content, prefer the following mappings:
+
+- **Process / method / workflow / implementation sequence** → `process-flow`
+- **Causal chain / mechanism / research framework / decision path** → `logic-map`
+- **Stage evolution / milestones / chronological progression** → `timeline-sequence`
+- **Architecture / system composition / hierarchy / layered modules** → `structure-diagram`
+- **Before-after / alternatives / trade-offs / stage comparison** → `comparison-matrix`
+- **One key chart and one takeaway** → `one-chart-one-message`
+
+Do not default to text cards when a diagram would communicate the structure more clearly.
+
 ### 3. Page Type Selection
 
 Use page types deliberately:
@@ -135,6 +152,25 @@ Use page types deliberately:
 | Checklist | Action items, pitfalls, review criteria | More than 6 items |
 | Q&A | Defense preparation and likely questions | Long answer paragraphs |
 | Closing | Summary, final call-to-action | New arguments |
+
+Preferred advanced page types for stronger expression:
+
+| Page Type | Best For | Key Principle |
+|-----------|----------|---------------|
+| Process Flow | Workflow, method, implementation path | Arrows and sequence dominate; text becomes labels |
+| Logic Map | Mechanism, causal chain, analytical framework | Nodes + relationships dominate; keep prose minimal |
+| Timeline Sequence | Stage evolution, milestones, roadmap | Time order is primary; 3–6 nodes preferred |
+| Structure Diagram | Architecture, layered system, module hierarchy | Show containment and levels before explanation |
+| Comparison Matrix | Scheme trade-offs, stage contrast, before/after | Use a matrix, not repeated paragraph cards |
+| One Chart One Message | One key figure plus one takeaway | Let the visual own most of the slide |
+
+### 3.5 Deck Rhythm Rules
+
+- Do not let 3 consecutive slides share the same main skeleton.
+- Adjacent slides should differ in at least one of: dominant visual form, information structure, or evidence type.
+- Diagram-centric pages should appear regularly across the deck, not just once or twice.
+- Avoid using `hero + banner + two-column cards` as the default for most content slides.
+- Treat deck-level rhythm as part of quality, not a cosmetic extra.
 
 ## Recommended V2 Templates
 
@@ -545,6 +581,17 @@ Traditional `<table>` with sticky headers, delayed-row highlighting, and evaluat
 
 Badges: `.ev-ok` (green), `.ev-good` (blue), `.ev-normal` (orange)
 
+### 11. Diagram-First Patterns
+
+The following patterns should be preferred when appropriate:
+
+- **Flow diagrams** — for process, operation sequence, method path, governance procedure, or implementation steps
+- **Logic diagrams** — for cause-effect, hypothesis structure, mechanism explanation, analytical framework, or influence path
+- **Timeline diagrams** — for phased development, research evolution, historical sequence, milestones, or scenario progression
+- **Structure diagrams** — for systems, modules, layers, organizations, architecture, or decomposition
+
+Use text only as labels, short callouts, or annotations around the diagram. Do not let the diagram become a small decoration under a large text block.
+
 ## Typography Rules
 
 | Element | Size | Weight | Color |
@@ -566,6 +613,9 @@ Badges: `.ev-ok` (green), `.ev-good` (blue), `.ev-normal` (orange)
 - **No card border decoration** — Cards should NOT use colored `border` or `border-left` for decoration (looks dated). Use subtle `box-shadow` or background tinting instead. Exception: the header accent bar (`::after`).
 - **Minimum font size** — Body text, card content, table data, and list content must be ≥ 14px. Only footer, badges, decorative labels, axis labels, and auxiliary metadata may go down to 12px.
 - **No direct Markdown dumping** — Do not paste long Markdown paragraphs into cards. Convert them into a core argument, support structure, and matching chart/evidence first.
+- **Visual first** — For process, logic, timing, and structure content, prioritize diagrams over dense text cards.
+- **Less text** — Most content slides should avoid paragraph blocks. Keep wording to short labels, takeaways, and compact supporting notes.
+- **Avoid repetitive skeletons** — Do not let most content slides reuse the same `hero + banner + two-column cards` pattern.
 - **No overloaded slides** — Avoid combining more than 3 main information modules on one page.
 - **No empty slides** — The body should feel intentionally filled through content, hierarchy, and visual layers; do not leave large blank regions unless they support a strong visual center.
 
@@ -581,6 +631,11 @@ Run acceptance checks after generating or modifying slides. A slide should not b
 - **Density**: the main body must contain enough visible content and visual structure; avoid sparse pages with one small card floating in empty space.
 - **Overload**: a slide with table + checklist + KPI + long note is overloaded and should be split.
 - **Logo**: every content slide must include the required logo.
+- **Visual priority**: pages describing process, mechanism, sequence, or hierarchy should use diagrams as the dominant visual form.
+- **Deck rhythm**: repeating the same main skeleton across 3 consecutive slides fails deck-level review.
+- **Text control**: long paragraph-style explanation on content slides fails review unless the page is explicitly a quote or narrative transition page.
+- **Primary visual center**: every slide should have one obvious dominant visual module.
+- **PPTX export fidelity**: screenshot-based export should capture the `.slide` container at 16:9 and preserve slide order.
 
 ### Recommended Thresholds
 
@@ -595,6 +650,9 @@ Run acceptance checks after generating or modifying slides. A slide should not b
 | Timeline nodes | ≤ 6 |
 | Checklist items | ≤ 6 |
 | Table size | ≤ 4 rows × 4 columns, otherwise split or convert to cards |
+| Consecutive same skeleton | ≤ 2 |
+| Diagram-oriented content ratio | high for process / logic / sequence / structure slides |
+| Screenshot export order | same as natural `slide-{nn}.html` order |
 
 ### Validation Script
 
@@ -642,6 +700,50 @@ This script:
 - Copies the bundled skill logo to `slides/assets/logo.png`.
 - Ensures generated slides can travel as a self-contained folder.
 
+### Screenshot PPTX Export Script
+
+After the HTML deck is complete, use the bundled exporter to convert `slides/slide-*.html` into a high-fidelity screenshot-based PPTX:
+
+```bash
+node scripts/export-slides-to-pptx.mjs slides
+```
+
+Useful options:
+
+```bash
+node scripts/export-slides-to-pptx.mjs slides \
+  --output slides/export/答辩稿.pptx \
+  --from 1 \
+  --to 20 \
+  --scale 2 \
+  --wait 300
+```
+
+This script:
+
+- Scans `slides/slide-*.html`
+- Sorts slides naturally
+- Renders each slide with Playwright
+- Waits for fonts and layout stabilization
+- Captures the `.slide` container only
+- Writes screenshots to `slides/export/images/`
+- Packs screenshots into a 16:9 PPTX with `pptxgenjs`
+
+Recommended defaults:
+
+- Viewport: `1280×720`
+- Screenshot scale: `2`
+- Output PPTX: `slides/export/deck.pptx`
+- Screenshot format: `png`
+
+Dependency note:
+
+- `playwright` is required for browser rendering
+- `pptxgenjs` is required for PPTX packaging
+- If Playwright is installed but Chromium is missing, run `npx playwright install chromium`
+
+The exported PPTX is display-first and visually faithful, but it is not guaranteed to be fully editable in PowerPoint.
+
 ## Font Stack
 
 ```css
@@ -666,15 +768,18 @@ font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
 2. Present the outline page by page to the user and revise it until confirmed.
 3. Save the confirmed outline to `slides/大纲.md`.
 4. Apply split rules and choose page types from `slides/大纲.md`.
-5. Choose visual mode: `academic-defense` or `tech-share`.
-6. Copy the full boilerplate template above or V2 template.
-7. Set `<title>` and header `<h1>` to match the planned page.
-8. Add page-specific CSS after the `/* PAGE-SPECIFIC CSS */` comment.
-9. Build body content using component library and visual-mode rules.
-10. Run acceptance checks, especially typography and density checks.
-11. Save each page as `slides/slide-{nn}.html`.
-12. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
-13. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
+5. Plan deck rhythm so adjacent slides do not overuse the same skeleton.
+6. Choose visual mode: `academic-defense` or `tech-share`.
+7. Prefer process-flow / logic-map / timeline-sequence / structure-diagram layouts before defaulting to card-heavy layouts.
+8. Copy the full boilerplate template above or V2 template.
+9. Set `<title>` and header `<h1>` to match the planned page.
+10. Add page-specific CSS after the `/* PAGE-SPECIFIC CSS */` comment.
+11. Build body content using component library and visual-mode rules, keeping text concise.
+12. Run acceptance checks, especially typography, density, diagram use, and deck rhythm.
+13. Save each page as `slides/slide-{nn}.html`.
+14. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
+15. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
+16. If the user requests PPTX, run `node scripts/export-slides-to-pptx.mjs slides` after the HTML deck is complete.
 
 ### Route B: existing outline provided by user
 
@@ -682,29 +787,32 @@ font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
 2. Normalize the outline into the expected page-by-page structure if needed.
 3. Save the normalized outline to `slides/大纲.md` when it is not already there.
 4. Apply split rules only when a page is obviously overloaded or the user asks for restructuring.
-5. Choose visual mode: `academic-defense` or `tech-share`.
-6. Copy the full boilerplate template above or V2 template.
-7. Set `<title>` and header `<h1>` to match each outline page.
-8. Add page-specific CSS after the `/* PAGE-SPECIFIC CSS */` comment.
-9. Build body content from the provided outline page by page.
-10. Run acceptance checks, especially typography and density checks.
-11. Save each page as `slides/slide-{nn}.html`.
-12. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
-13. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
+5. Plan deck rhythm so adjacent slides do not overuse the same skeleton.
+6. Choose visual mode: `academic-defense` or `tech-share`.
+7. Prefer process-flow / logic-map / timeline-sequence / structure-diagram layouts before defaulting to card-heavy layouts.
+8. Copy the full boilerplate template above or V2 template.
+9. Set `<title>` and header `<h1>` to match each outline page.
+10. Add page-specific CSS after the `/* PAGE-SPECIFIC CSS */` comment.
+11. Build body content from the provided outline page by page, keeping text concise.
+12. Run acceptance checks, especially typography, density, diagram use, and deck rhythm.
+13. Save each page as `slides/slide-{nn}.html`.
+14. Run `node scripts/copy-slide-assets.mjs slides` to copy `slides/assets/logo.png`.
+15. Run `node scripts/add-slide-keyboard-nav.mjs slides` to add keyboard-only page switching.
+16. If the user requests PPTX, run `node scripts/export-slides-to-pptx.mjs slides` after the HTML deck is complete.
 
 ## PPTX Conversion (Optional)
 
-If the user already provides an outline and asks for PPTX, follow **Route B** to generate the slide HTML files first, then convert the generated HTML slides to PPTX. Do not force a new outline-planning round before conversion.
+If the user already provides an outline and asks for PPTX, follow **Route B** to generate the slide HTML files first, then export the completed `slides/` directory to PPTX.
 
-```javascript
-const pptxgen = require('pptxgenjs');
-const html2pptx = require('./.claude/skills/pptx/scripts/html2pptx.js');
+Default route:
 
-const pptx = new pptxgen();
-pptx.layout = 'LAYOUT_16x9';
-await html2pptx('slide-2.html', pptx);
-await pptx.writeFile({ fileName: 'output.pptx' });
+```bash
+node scripts/export-slides-to-pptx.mjs slides
 ```
+
+This default route generates a screenshot-based PPTX: it preserves visual fidelity, but the slide content is not guaranteed to be editable as native PowerPoint text and shapes.
+
+Only use editable PPT reconstruction when the user explicitly asks for editability and accepts reduced layout fidelity.
 
 ## Assets
 

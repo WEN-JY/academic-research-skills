@@ -1,29 +1,23 @@
 ---
 name: markdown-to-word
-description: "Convert Markdown files with LaTeX math, tables, and SVG images to professionally formatted Word (.docx) documents. This skill should be used when users need to convert markdown academic papers to Word format, especially those containing mathematical formulas, equation numbering, and Chinese/English mixed content. Uses a custom pandoc pipeline with Lua filters for math cleaning, equation number extraction, SVG rasterization, and OMML post-processing."
+description: "Convert Markdown files with LaTeX math, tables, and images to professionally formatted Word (.docx) documents. This skill should be used when users need to convert markdown academic papers to Word format, especially those following Zhejiang University Master of Engineering Management thesis body-format requirements such as FangSong body text, 1.5 line spacing, justified paragraphs, and three-line tables."
 ---
 
 # Markdown to Word Conversion
 
 ## Overview
 
-Convert Markdown (.md) files to Word (.docx) documents using a custom Pandoc pipeline specifically designed for academic papers with LaTeX math, Chinese typography, SVG figures, and equation numbering. The pipeline includes Lua filters and Python post-processors to ensure clean rendering in Word.
+Convert Markdown (`.md`) files to Word (`.docx`) documents using the bundled Node.js converter. The current default style profile is aimed at the common body-format requirements of the Zhejiang University Master of Engineering Management thesis, especially for 正文、标题、段落和表格。
 
 ## Core Tool
 
-All scripts are bundled inside this skill directory (self-contained):
+All scripts are bundled inside this skill directory:
 
 ```
-.claude/skills/markdown-to-word/
+skills/markdown-to-word/
 ├── convert_md_to_docx.sh        # Main entry point
-├── filters/
-│   ├── auto-math.lua            # Plain-text math → TeX
-│   ├── math-clean.lua           # TeX spacing sanitization
-│   ├── move-eqnum.lua           # Equation number extraction
-│   └── svg-to-png.lua           # SVG → PNG rasterization
-├── scripts/
-│   ├── clean_docx_omml.mjs       # OMML post-processor
-│   └── svg2png.sh               # Chrome-based SVG renderer
+├── md2docx.mjs                  # Markdown → docx main converter
+├── latex2math.mjs               # LaTeX math → docx math objects
 ├── SKILL.md
 └── AGENTS.md
 ```
@@ -31,119 +25,83 @@ All scripts are bundled inside this skill directory (self-contained):
 **Usage:**
 
 ```bash
-.claude/skills/markdown-to-word/convert_md_to_docx.sh [-o output.docx] input.md
+skills/markdown-to-word/convert_md_to_docx.sh [-o output.docx] input.md
 ```
 
 - If `-o` is omitted, output defaults to `input.docx`
-- The script auto-resolves `filters/` and `scripts/` relative to its own location via `$BASH_SOURCE`
-- Resolves pandoc via `PANDOC_BIN` env var, system PATH, or local `./pandoc-*/bin/pandoc`
+- The script calls the bundled Node.js converter directly
+- After generation, the resulting `.docx` is opened automatically for preview on the local machine
+
+## Default Formatting Profile
+
+- 正文：小四号、仿宋、首行缩进 2 字符
+- 段落：1.5 倍行距、两端对齐
+- 一级标题：小三号、仿宋、加黑
+- 二级标题：四号、仿宋、加黑
+- 三级标题：小四号、仿宋
+- 表格：三线表
+- 英文与数字：`Times New Roman`
+
+These defaults are intended to match the common body-text conventions of the Zhejiang University Master of Engineering Management thesis format. Cover pages, declarations, headers/footers, page numbers, TOC, and some school-specific front/back matter may still need manual finishing in Word.
 
 ## Pipeline Architecture
 
-```
+```bash
 input.md
-  ↓ sed: \tag{x-y} → \text{(x-y)}
-  ↓ pandoc with Lua filters:
-  │   1. auto-math.lua    → heuristic plain-text math to TeX
-  │   2. math-clean.lua   → sanitize TeX spacing commands & Unicode spaces
-  │   3. svg-to-png.lua   → rasterize SVG images via Chrome
-  │   4. move-eqnum.lua   → extract equation numbers from InlineMath
-  ↓ pandoc output → .docx
-  ↓ clean_docx_omml.mjs   → post-process OMML math text runs
+  ↓ preprocessTabTables       # 制表符表格 → Markdown 表格
+  ↓ ensureParagraphBreaks     # 补全段落断行
+  ↓ fixChinesePunctuation     # 中文语境标点规范化
+  ↓ markdown-it parse         # 解析标题、段落、列表、表格、公式、图片
+  ↓ docx build                # 应用正文/标题/表格样式
   ↓ output.docx
 ```
 
-## Pandoc Arguments
+## Key Behaviors
 
-```bash
-pandoc input.md \
-  --from "markdown+tex_math_dollars+tex_math_single_backslash+raw_tex+pipe_tables+grid_tables+multiline_tables+table_captions+superscript+subscript-smart" \
-  --to docx \
-  --output output.docx \
-  --resource-path "$input_dir:$input_dir/..:$script_dir:$script_dir/figs" \
-  --lua-filter filters/auto-math.lua \
-  --lua-filter filters/math-clean.lua \
-  --lua-filter filters/svg-to-png.lua \
-  --lua-filter filters/move-eqnum.lua
-```
+### 1. Paragraph Normalization
 
-Key features:
-- `-smart` disabled to avoid Unicode typographic punctuation near math
-- `tex_math_dollars + tex_math_single_backslash` for full LaTeX math support
-- `pipe_tables + grid_tables + multiline_tables` for all table formats
-- `--resource-path` searches input dir, parent dir, script dir, and figs/
+- Converts tab-separated pseudo-tables to standard Markdown tables
+- Inserts missing paragraph breaks for Chinese academic drafts where lines are separated but blank lines are omitted
+- Normalizes Chinese-context punctuation outside code and math spans
 
-## Lua Filters
+### 2. Typography Rules
 
-### 1. auto-math.lua
-Heuristically converts plain-text math (common in CN PDF/Word exports) to TeX:
-- Unicode math symbols: `∑ → \sum`, `∏ → \prod`, `× → \times`, `≤ → \le`, `≥ → \ge`, `→ → \to`
-- Overbar notation: `R‾ → \bar{R}`
-- Subscripts/superscripts: `COP_(i,t) → COP_{i,t}`, `TP_k^i → TP_{k}^{i}`
-- Piecewise functions: `■( ... @ ... )┤ → \begin{cases} ... \\ ... \end{cases}`
-- Equation numbers: `（2-1） → \text{（2-1）}`
-- Only triggers on lines that look like formulas (has `=` or `∑/∏`, short enough, has index patterns)
-- Can be disabled: `PANDOC_AUTO_MATH=0`
+- Body text uses 仿宋 for East Asian text and `Times New Roman` for Latin text
+- Normal paragraphs use 2-character first-line indent
+- Body paragraphs use justified alignment and 1.5 line spacing
+- Heading 1 is centered; heading 2 and heading 3 are left aligned
 
-### 2. math-clean.lua
-Sanitizes math text before OMML output (docx target only):
-- Replaces TeX spacing commands (`\,`, `\;`, `\:`, `\!`, `\quad`, `\qquad`) with regular spaces
-- Cleans Unicode typographic spaces (U+2000–U+200A, U+202F) and zero-width characters
-- Normalizes fullwidth brackets `（）` to halfwidth `()` in math environments
-- Collapses consecutive spaces
+### 3. Table Rendering
 
-### 3. svg-to-png.lua
-Converts SVG images to PNG for Word compatibility:
-- Uses `scripts/svg2png.sh` (headless Chrome renderer)
-- Extracts dimensions from SVG `width/height` attributes or `viewBox`
-- Falls back to `rsvg-convert` if available
-- Chrome path: `CHROME_BIN` env var (defaults to macOS Chrome.app)
+- Markdown tables are converted to three-line tables
+- Vertical borders are removed by default
+- Header row and bottom rule are emphasized to fit thesis-style tables
 
-### 4. move-eqnum.lua
-Extracts equation numbers from InlineMath to avoid OMML rendering issues:
-- Moves trailing `（4-8）` or `\text{（4-8）}` from math environment to plain text
-- Only affects InlineMath (DisplayMath keeps numbers for centered display)
-- Strips trailing TeX spacing commands before extracting
+### 4. Formula Rendering
 
-## Post-Processing
+- Supports inline math `$...$`
+- Supports display math `$$...$$`
+- Converts LaTeX expressions into docx math objects through `latex2math.mjs`
 
-### clean_docx_omml.mjs (Node.js)
-```bash
-node scripts/clean_docx_omml.mjs output.docx
-```
-- Pure Node.js, no external npm dependencies (uses `unzip`/`zip` CLI for docx manipulation)
-- Operates on `<m:t>...</m:t>` elements inside `word/*.xml` files in the DOCX zip
-- Replaces thin/typographic spaces (U+2000–U+200A, U+202F) with regular spaces
-- Replaces zero-width characters (U+200B, U+200C, U+200D, U+2060, U+FEFF, U+00A0)
-- Fixes U+FFFD equation number encoding artifacts: `FFFD 4-8 FFFD → （4-8）`
-- Atomic file replacement via temp directory
-- Can be disabled: `DOCX_OMML_POSTCLEAN=0`
+### 5. Image Rendering
 
-### svg2png.sh
-```bash
-scripts/svg2png.sh input.svg output.png [width height]
-```
-- Uses headless Google Chrome for rendering
-- Auto-extracts dimensions from SVG attributes or viewBox
-- Caps output at 4000x4000px
-- Creates temporary HTML wrapper for Chrome screenshot
+- Supports local PNG and JPEG images
+- Auto-detects image size from file headers
+- Scales down oversized images to fit the page width
 
-## Environment Variables
+## Preview Workflow
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `PANDOC_BIN` | system pandoc | Override pandoc path |
-| `PANDOC_AUTO_MATH` | `1` | Set `0` to disable auto-math filter |
-| `DOCX_OMML_POSTCLEAN` | `1` | Set `0` to disable OMML post-cleaning |
-| `CHROME_BIN` | `/Applications/Google Chrome.app/...` | Chrome binary for SVG rendering |
-| `SVG2PNG_BIN` | `scripts/svg2png.sh` | SVG to PNG converter script |
+When the user asks for conversion preview images:
+
+1. Update the target Markdown documentation page first.
+2. Run `skills/markdown-to-word/convert_md_to_docx.sh` on that Markdown file.
+3. Open both the Markdown source and the generated Word document side by side.
+4. Let the user capture “before / after” screenshots from the local machine.
 
 ## File Structure
 
-All bundled in `.claude/skills/markdown-to-word/` (see Core Tool section above).
+All bundled in `skills/markdown-to-word/` (see Core Tool section above).
 
 ## Dependencies
 
-- **pandoc**: `brew install pandoc`
-- **Node.js**: For OMML post-processing (`clean_docx_omml.mjs`)
-- **Google Chrome**: For SVG rendering (headless)
+- **Node.js**: required for `md2docx.mjs`

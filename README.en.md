@@ -10,7 +10,7 @@ Skill sources in this repo are organized under the `skills/` directory.
 - `word-flowchart` - Create Microsoft Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment; Mermaid conversion is supported as a use case.
 - `cites-review` - Review, organize, and standardize references and in-text citations, especially for GB/T 7714-2015, CNKI extraction, citation cross-checking, and renumbering.
 - `html-slide` - Generate HTML slides for thesis defense and professional presentations with a consistent academic design system, KPI cards, tables, and formula blocks.
-- `markdown-to-word` - Convert Markdown academic drafts with formulas, tables, and images into Word documents for further editing, submission, or formatting.
+- `markdown-to-word` - Convert Markdown academic drafts with formulas, tables, and images into Word documents, with a default body-style profile aligned to Zhejiang University Master of Engineering Management thesis formatting.
 <!-- SKILLS:END -->
 
 ## One-Click Install & Docs Update
@@ -53,5 +53,7 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 
 - `docs/README.md` (Chinese)
 - `docs/README.en.md` (English)
+- `docs/skills/markdown-to-word.md` (Chinese)
+- `docs/skills/markdown-to-word.en.md` (English)
 - `docs/skills/word-flowchart.md` (Chinese)
 - `docs/skills/word-flowchart.en.md` (English)
