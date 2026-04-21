@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DEFAULTS = {
   viewportWidth: 1280,
@@ -14,6 +15,11 @@ const DEFAULTS = {
   jpegQuality: 90,
   outputName: "deck.pptx",
 };
+
+const SCRIPT_FILE = fileURLToPath(import.meta.url);
+const SCRIPT_DIR = path.dirname(SCRIPT_FILE);
+const SKILL_ROOT = path.resolve(SCRIPT_DIR, "..");
+const skillRequire = createRequire(path.join(SKILL_ROOT, "package.json"));
 
 function printHelp() {
   console.log(`Usage:
@@ -148,10 +154,11 @@ function parseArgs(argv) {
 
 async function loadPlaywright() {
   try {
-    return await import("playwright");
+    const resolvedEntry = skillRequire.resolve("playwright");
+    return await import(pathToFileURL(resolvedEntry).href);
   } catch (error) {
     throw new Error(
-      "Playwright is required for slide rendering. Install it first, for example: npm install -D playwright && npx playwright install chromium"
+      `Playwright is required for slide rendering. Install it in the skill directory first, for example: npm install --prefix "${SKILL_ROOT}" && npx --prefix "${SKILL_ROOT}" playwright install chromium`
     );
   }
 }
@@ -169,11 +176,12 @@ function findChromeExecutable() {
 
 async function loadPptxGenJs() {
   try {
-    const module = await import("pptxgenjs");
+    const resolvedEntry = skillRequire.resolve("pptxgenjs");
+    const module = await import(pathToFileURL(resolvedEntry).href);
     return module.default ?? module;
   } catch (error) {
     throw new Error(
-      "pptxgenjs is required for PPTX export. Install it first, for example: npm install pptxgenjs"
+      `pptxgenjs is required for PPTX export. Install it in the skill directory first, for example: npm install --prefix "${SKILL_ROOT}"`
     );
   }
 }
