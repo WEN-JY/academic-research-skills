@@ -1,0 +1,9 @@
+{
+  "name": "html-slide-skill",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "playwright": "^1.52.0",
+    "pptxgenjs": "^3.12.0"
+  }
+}
