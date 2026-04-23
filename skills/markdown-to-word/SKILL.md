@@ -83,7 +83,13 @@ input.md
 - Supports display math `$$...$$`
 - Converts LaTeX expressions into docx math objects through `latex2math.mjs`
 
-### 5. Image Rendering
+### 5. Citation Superscript Rendering
+
+- Supports numeric citation markers written as `^[1]`, `^[2,3]`, `^[4-6]`
+- Converts these markers into Word superscript citations such as `[1]`
+- Keeps the visible citation text numeric so it can align with GB/T 7714-2015 reference numbering workflows
+
+### 6. Image Rendering
 
 - Supports local PNG and JPEG images
 - Auto-detects image size from file headers

@@ -17,6 +17,7 @@
 - `word-flowchart` - 自主绘制 Microsoft Word 风格流程图（Graphviz DOT），强调黑白样式、正交连线与严格对齐；支持将 Mermaid 流程图作为输入进行转换。
 - `cites-review` - 审查、整理并规范参考文献与正文引用，重点支持 GB/T 7714-2015，也可用于知网文献提取、引文核对与重编号。
 - `html-slide` - 生成答辩汇报与专业展示场景的 HTML 幻灯片，内置统一的学术风格版式、指标卡片、表格与公式展示组件。
+- `literature-review` - 围绕研究主题检索近年高质量文献、补写文献综述，并按正文引用顺序输出与 GB/T 7714-2015 兼容的参考文献列表。
 - `markdown-to-word` - 将包含公式、表格、图片的 Markdown 学术文稿转换为 Word 文档，默认对齐浙江大学工程管理硕士学位论文常用正文格式。
 <!-- SKILLS:END -->
 
@@ -49,11 +50,13 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
   - `word-flowchart`：把研究流程、技术路线、决策分支整理成 Word 风格流程图
   - `cites-review`：检查参考文献格式、核对正文引文编号、整理知网文献条目
   - `html-slide`：制作论文答辩、阶段汇报、项目展示用的 HTML 幻灯片
+  - `literature-review`：围绕研究主题补检索、补文献综述，并生成可直接落入论文的编号引文与参考文献
   - `markdown-to-word`：把 Markdown 论文稿快速转换为可提交或可继续排版的 Word 文档
 - 示例：
   - "使用 word-flowchart 把下面的研究流程整理成 Word 风格流程图，并输出 DOT + 图片。"
   - "使用 cites-review 检查这份参考文献是否符合 GB/T 7714-2015。"
   - "使用 html-slide 生成一页论文答辩 HTML 幻灯片，展示研究背景与创新点。"
+  - "使用 literature-review 围绕项目风险管理补充近3年文献综述，并按 GB/T 7714-2015 输出参考文献。"
   - "使用 markdown-to-word 把这份 Markdown 章节稿转换成 Word 文档。"
 
 ## markdown-to-word 转换预览

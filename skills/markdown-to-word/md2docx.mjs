@@ -305,6 +305,37 @@ function createImageRun(tok) {
   }
 }
 
+const CITE_SUPERSCRIPT_RE = /\^\[([0-9,\-–，、；;\s]+)\]/g;
+
+function normalizeCitationLabel(label) {
+  return label
+    .replace(/[，、；;]/g, ',')
+    .replace(/\s*[-–]\s*/g, '-')
+    .replace(/\s*,\s*/g, ',')
+    .trim();
+}
+
+function appendTextRunsWithCitations(runs, text, bold, italic, runFn) {
+  let lastIndex = 0;
+  for (const match of text.matchAll(CITE_SUPERSCRIPT_RE)) {
+    const index = match.index ?? 0;
+    if (index > lastIndex) {
+      runs.push(new TextRun(runFn({ text: text.slice(lastIndex, index), bold, italics: italic })));
+    }
+    const normalized = normalizeCitationLabel(match[1]);
+    runs.push(new TextRun(runFn({
+      text: `[${normalized}]`,
+      bold,
+      italics: italic,
+      superScript: true,
+    })));
+    lastIndex = index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    runs.push(new TextRun(runFn({ text: text.slice(lastIndex), bold, italics: italic })));
+  }
+}
+
 // ── Inline tokens → children (TextRun + Math) ──
 // runFn: function(opts) → TextRun options, defaults to defaultRun
 function parseInline(children, extraStyle = {}, runFn = defaultRun) {
@@ -320,7 +351,7 @@ function parseInline(children, extraStyle = {}, runFn = defaultRun) {
         if (linkHref) {
           runs.push({ type: 'link', href: linkHref, text: tok.content, bold, italic, runFn });
         } else {
-          runs.push(new TextRun(runFn({ text: tok.content, bold, italics: italic })));
+          appendTextRunsWithCitations(runs, tok.content, bold, italic, runFn);
         }
         break;
       case 'strong_open': bold = true; break;
@@ -415,7 +446,7 @@ function convertTokens(tokens) {
         i += 2;
         const opts = {
           children: wrapLinks(parseInline(inline.children)),
-          spacing: { after: 120, line: LINE_SPACING },
+          spacing: { before: 0, after: 0, line: LINE_SPACING },
           alignment: AlignmentType.JUSTIFIED,
         };
         if (inBlockquote) {
@@ -517,7 +548,7 @@ function convertTokens(tokens) {
                 children: [new Paragraph({
                   children: cell ? wrapLinks(cell.runs) : [new TextRun('')],
                   spacing: { before: 30, after: 30, line: LINE_SPACING_SINGLE },
-                  alignment: AlignmentType.CENTER,
+                  alignment: AlignmentType.LEFT,
                 })],
                 borders,
               }));
@@ -592,7 +623,7 @@ const doc = new Document({
     default: {
       document: {
         run: { font: FONT_BODY, size: FONT_SIZE },
-        paragraph: { spacing: { line: LINE_SPACING }, alignment: AlignmentType.JUSTIFIED },
+        paragraph: { spacing: { before: 0, after: 0, line: LINE_SPACING }, alignment: AlignmentType.JUSTIFIED },
       },
       heading1: {
         run: { font: FONT_BODY, size: FONT_SIZE_H1, bold: true },
@@ -612,7 +643,7 @@ const doc = new Document({
         id: 'Normal',
         name: 'Normal',
         run: { font: FONT_BODY, size: FONT_SIZE },
-        paragraph: { spacing: { line: LINE_SPACING }, alignment: AlignmentType.JUSTIFIED },
+        paragraph: { spacing: { before: 0, after: 0, line: LINE_SPACING }, alignment: AlignmentType.JUSTIFIED },
       },
     ],
   },

@@ -33,5 +33,6 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 - `word-flowchart` - 自主绘制 Microsoft Word 风格流程图（Graphviz DOT），强调黑白样式、正交连线与严格对齐；支持将 Mermaid 流程图作为输入进行转换。
 - `cites-review` - 审查、整理并规范参考文献与正文引用，适用于 GB/T 7714-2015 校验、知网文献提取、引文核对与重编号。
 - `html-slide` - 生成学术答辩与汇报场景的 HTML 幻灯片，提供统一视觉风格、图文布局、表格与公式展示组件。
+- `literature-review` - 结合研究主题、提纲或草稿检索近年高质量文献，补写文献综述，并生成按正文顺序编号的 GB/T 7714-2015 参考文献。
 - `markdown-to-word` - 将 Markdown 学术文稿转换为 Word 文档，支持公式、表格与图片，默认对齐浙江大学工程管理硕士学位论文常用正文格式。
 <!-- SKILLS:END -->
