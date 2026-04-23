@@ -19,6 +19,7 @@
 - `html-slide` - 生成答辩汇报与专业展示场景的 HTML 幻灯片，内置统一的学术风格版式、指标卡片、表格与公式展示组件。
 - `literature-review` - 围绕研究主题检索近年高质量文献、补写文献综述，并按正文引用顺序输出与 GB/T 7714-2015 兼容的参考文献列表。
 - `markdown-to-word` - 将包含公式、表格、图片的 Markdown 学术文稿转换为 Word 文档，默认对齐浙江大学工程管理硕士学位论文常用正文格式。
+- `docx-thesis-format` - 对现有 `.docx` 学位论文进行格式检查与自动修复，覆盖正文、章/节/小节标题、公式编号、图表题、三线表、目录与页眉页脚等学院规范项。
 <!-- SKILLS:END -->
 
 ## 一键安装与文档更新
@@ -52,25 +53,46 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
   - `html-slide`：制作论文答辩、阶段汇报、项目展示用的 HTML 幻灯片
   - `literature-review`：围绕研究主题补检索、补文献综述，并生成可直接落入论文的编号引文与参考文献
   - `markdown-to-word`：把 Markdown 论文稿快速转换为可提交或可继续排版的 Word 文档
+  - `docx-thesis-format`：检查并修复现有 Word 论文的排版细节，输出修复后文档与格式报告
 - 示例：
   - "使用 word-flowchart 把下面的研究流程整理成 Word 风格流程图，并输出 DOT + 图片。"
   - "使用 cites-review 检查这份参考文献是否符合 GB/T 7714-2015。"
   - "使用 html-slide 生成一页论文答辩 HTML 幻灯片，展示研究背景与创新点。"
   - "使用 literature-review 围绕项目风险管理补充近3年文献综述，并按 GB/T 7714-2015 输出参考文献。"
   - "使用 markdown-to-word 把这份 Markdown 章节稿转换成 Word 文档。"
+  - "使用 docx-thesis-format 检查并修复这份 `.docx` 学位论文格式，输出修复版文档和报告。"
 
 ## markdown-to-word 转换预览
 
-`markdown-to-word` 默认按浙江大学工程管理硕士学位论文常用正文格式输出，覆盖正文小四号仿宋、1.5 倍行距、章标题小三号仿宋加黑、两端对齐与三线表等排版要素。
+`markdown-to-word` 默认按浙江大学工程管理硕士学位论文常用正文格式输出，覆盖正文小四号仿宋、段前段后 0 磅、1.5 倍行距、章标题小三号仿宋加黑、节/小节标题空格规范、公式编号、图表题按章编号与三线表等排版要素。
 
 ![markdown-to-word 转换前后对比](docs/skills/markdown-to-word.png)
 
 详细说明见 `docs/skills/markdown-to-word.md`。
 
+## docx-thesis-format 能力摘要
+
+`docx-thesis-format` 面向已有 `.docx` 学位论文，采用 Node.js + OOXML 方式进行确定性检测与自动修复，当前已覆盖：
+
+- 页面大小、分节边距、文档网格、前置罗马页码与正文页码切换
+- 页眉页脚检测，支持“浙江大学硕士学位论文”左侧固定、当前部分标题右侧对齐的页眉规则
+- 目录域与目录顺序检测
+- 正文段落、章/节/小节标题、块公式编号 `（1-1）`
+- 图题 `图1.1`、表题 `表1.1` 按章内自增
+- 三线表边框与单元格内容水平居左
+- 参考文献编号与类型标识基础检测
+
+相关文档：
+
+- `docs/skills/docx-thesis-format-review.md`
+- `docs/skills/docx-thesis-format-extracted-rules.md`
+
 ## 文档
 
 - `docs/README.md`（中文）
 - `docs/README.en.md`（English）
+- `docs/skills/docx-thesis-format-review.md`（中文）
+- `docs/skills/docx-thesis-format-extracted-rules.md`（中文）
 - `docs/skills/markdown-to-word.md`（中文）
 - `docs/skills/markdown-to-word.en.md`（English）
 - `docs/skills/word-flowchart.md`（中文）
