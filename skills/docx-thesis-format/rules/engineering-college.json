@@ -1,0 +1,159 @@
+{
+  "profile": "engineering-college-thesis",
+  "body": {
+    "eastAsiaFont": "仿宋",
+    "latinFont": "Times New Roman",
+    "fontSizeHalfPoints": 24,
+    "lineTwips": 360,
+    "alignment": "both",
+    "firstLineTwips": 480
+  },
+  "page": {
+    "widthTwips": 11907,
+    "heightTwips": 16840,
+    "orientation": "portrait",
+    "allowedMarginProfiles": [
+      {
+        "name": "normal",
+        "top": 1440,
+        "right": 1797,
+        "bottom": 1440,
+        "left": 1797,
+        "header": 720,
+        "footer": 720,
+        "gutter": 0
+      },
+      {
+        "name": "content",
+        "top": 1440,
+        "right": 1797,
+        "bottom": 1440,
+        "left": 1797,
+        "header": 851,
+        "footer": 992,
+        "gutter": 0
+      },
+      {
+        "name": "content-alt",
+        "top": 1440,
+        "right": 1797,
+        "bottom": 1440,
+        "left": 1797,
+        "header": 850,
+        "footer": 992,
+        "gutter": 0
+      },
+      {
+        "name": "full-bleed-front",
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0,
+        "header": 720,
+        "footer": 720,
+        "gutter": 0
+      }
+    ],
+    "docGridLinePitch": 360
+  },
+  "pageNumbering": {
+    "frontMatterFormat": "upperRoman",
+    "frontMatterStart": 1,
+    "bodyFormat": "decimal",
+    "footerAlignment": "center"
+  },
+  "headersFooters": {
+    "headerPrefix": "浙江大学硕士学位论文",
+    "headerAlignment": "both",
+    "headerLayout": "left-prefix-right-current-title",
+    "headerFont": "仿宋",
+    "headerFontSizeHalfPoints": 18,
+    "bodyHeaderExamples": [
+      "浙江大学硕士学位论文 摘要",
+      "浙江大学硕士学位论文 Abstract",
+      "浙江大学硕士学位论文 目  录",
+      "浙江大学硕士学位论文 图目录",
+      "浙江大学硕士学位论文 表目录",
+      "浙江大学硕士学位论文 中英文对照及缩略表",
+      "浙江大学硕士学位论文 第1章 绪论",
+      "浙江大学硕士学位论文  参考文献"
+    ],
+    "requirePageFieldInFooters": true
+  },
+  "toc": {
+    "fieldCode": "TOC \\\\o \"1-3\" \\\\h \\\\z \\\\u",
+    "requiredOrder": [
+      "致谢",
+      "摘要",
+      "Abstract",
+      "图目录",
+      "表目录",
+      "中英文对照及缩略表",
+      "第1章",
+      "参考文献",
+      "附录"
+    ]
+  },
+  "headings": {
+    "chapter": {
+      "pattern": "^第[0-9一二三四五六七八九十]+章",
+      "font": "仿宋",
+      "latinFont": "Times New Roman",
+      "fontSizeHalfPoints": 30,
+      "bold": true,
+      "alignment": "center"
+    },
+    "section": {
+      "pattern": "^([1-9]\\d?\\.\\d{1,2})\\s+(.+)$",
+      "spacesAfterNumber": 2,
+      "spaceFont": "宋体",
+      "font": "仿宋",
+      "latinFont": "Times New Roman",
+      "fontSizeHalfPoints": 28,
+      "bold": true,
+      "alignment": "left"
+    },
+    "subsection": {
+      "pattern": "^([1-9]\\d?\\.\\d{1,2}\\.\\d{1,2})\\s+(.+)$",
+      "spacesAfterNumber": 1,
+      "spaceFont": "宋体",
+      "font": "仿宋",
+      "latinFont": "Times New Roman",
+      "fontSizeHalfPoints": 24,
+      "bold": false,
+      "alignment": "left"
+    }
+  },
+  "equations": {
+    "numberFormat": "（{chapter}-{index}）",
+    "appendixNumberFormat": "（{appendix}-{index}）",
+    "equationAlignment": "center",
+    "numberAlignment": "right",
+    "rightTabTwips": 9000
+  },
+  "figures": {
+    "numberFormat": "图{chapter}.{index}",
+    "captionPosition": "below",
+    "alignment": "center"
+  },
+  "tables": {
+    "numberFormat": "表{chapter}.{index}",
+    "captionPosition": "above",
+    "alignment": "center",
+    "style": "three-line-table",
+    "cellAlignment": "left"
+  },
+  "references": {
+    "heading": "参考文献",
+    "numberFormat": "[{index}]",
+    "continuous": true,
+    "orderByCitation": true,
+    "typePattern": "\\[(M|C|N|J|D|R|S|P|A|DB|CP|EB/OL|DB/OL)\\]"
+  },
+  "abstract": {
+    "chineseKeywordsMin": 4,
+    "chineseKeywordsMax": 8,
+    "englishFont": "Times New Roman",
+    "fontSizeHalfPoints": 24
+  }
+}
