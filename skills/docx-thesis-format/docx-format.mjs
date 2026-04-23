@@ -612,6 +612,8 @@ function checkAndFixBodyParagraph(paragraph, context, index) {
     font: context.rules.body.eastAsiaFont,
     size: context.rules.body.fontSizeHalfPoints,
     line: context.rules.body.lineTwips,
+    before: context.rules.body.spacingBefore,
+    after: context.rules.body.spacingAfter,
     firstLine: context.rules.body.firstLineTwips,
   });
   if (!ok) {
@@ -628,6 +630,8 @@ function checkAndFixBodyParagraph(paragraph, context, index) {
       latinFont: context.rules.body.latinFont,
       size: context.rules.body.fontSizeHalfPoints,
       line: context.rules.body.lineTwips,
+      before: context.rules.body.spacingBefore,
+      after: context.rules.body.spacingAfter,
       firstLine: context.rules.body.firstLineTwips,
       resetInd: true,
       clearShading: true,
@@ -1158,6 +1162,8 @@ function paragraphHasStyle(paragraph, expected) {
   if (expected.alignment && paragraphAlignment(paragraph) !== expected.alignment) return false;
   const spacing = findChild(pPr, 'w:spacing');
   if (expected.line && spacing?.attributes?.['w:line'] !== String(expected.line)) return false;
+  if (expected.before !== undefined && (spacing?.attributes?.['w:before'] || '0') !== String(expected.before)) return false;
+  if (expected.after !== undefined && (spacing?.attributes?.['w:after'] || '0') !== String(expected.after)) return false;
   const ind = findChild(pPr, 'w:ind');
   if (expected.firstLine !== undefined && ind?.attributes?.['w:firstLine'] !== String(expected.firstLine)) return false;
 
@@ -1223,6 +1229,12 @@ function setParagraphProps(paragraph, options = {}) {
   if (options.spacingLine) {
     const spacing = ensureChild(pPr, 'w:spacing');
     spacing.attributes = { ...(spacing.attributes || {}), 'w:line': String(options.spacingLine), 'w:lineRule': 'auto' };
+  }
+  if (options.before !== undefined || options.after !== undefined) {
+    const spacing = ensureChild(pPr, 'w:spacing');
+    spacing.attributes = { ...(spacing.attributes || {}) };
+    if (options.before !== undefined) spacing.attributes['w:before'] = String(options.before);
+    if (options.after !== undefined) spacing.attributes['w:after'] = String(options.after);
   }
   if (options.firstLine !== undefined || options.hanging !== undefined) {
     const ind = ensureChild(pPr, 'w:ind');

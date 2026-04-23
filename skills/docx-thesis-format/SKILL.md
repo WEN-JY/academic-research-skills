@@ -62,7 +62,7 @@ skills/docx-thesis-format/check_docx_format.sh --rules custom-rules.json input.d
 
 ## Current Automated Checks and Fixes
 
-- **Body text**: 小四仿宋, English/numbers Times New Roman, 1.5 line spacing, 2-character first-line indent, justified alignment.
+- **Body text**: 小四仿宋, English/numbers Times New Roman, 1.5 line spacing, spacing before/after 0 pt, 2-character first-line indent, justified alignment.
 - **Chapter headings**: `第1章` style, centered, bold, 小三仿宋.
 - **Section headings**: `2.1  节标题`, exactly two spaces after the number; the space run uses 宋体.
 - **Subsection headings**: `2.1.1 小节标题`, exactly one space after the number; the space run uses 宋体.

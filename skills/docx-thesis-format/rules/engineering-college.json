@@ -5,6 +5,8 @@
     "latinFont": "Times New Roman",
     "fontSizeHalfPoints": 24,
     "lineTwips": 360,
+    "spacingBefore": 0,
+    "spacingAfter": 0,
     "alignment": "both",
     "firstLineTwips": 480
   },

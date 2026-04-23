@@ -18,7 +18,7 @@ skills/docx-thesis-format/format_docx.sh [-o output.docx] [--report report.md] i
 
 ## Key Rules
 
-- 正文：小四仿宋，英文数字 Times New Roman，1.5 倍行距，首行缩进 2 字符，两端对齐
+- 正文：小四仿宋，英文数字 Times New Roman，段前 0 磅、段后 0 磅、1.5 倍行距，首行缩进 2 字符，两端对齐
 - 节标题：`2.1  节标题`，编号后两个宋体空格
 - 小节标题：`2.1.1 小节标题`，编号后一个宋体空格
 - 公式：`（1-1）`、`（1-2）`，按章内自增，公式居中、编号右对齐
