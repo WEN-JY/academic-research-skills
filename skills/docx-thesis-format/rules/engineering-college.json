@@ -103,7 +103,8 @@
       "latinFont": "Times New Roman",
       "fontSizeHalfPoints": 30,
       "bold": true,
-      "alignment": "center"
+      "alignment": "center",
+      "pageBreakBefore": true
     },
     "section": {
       "pattern": "^([1-9]\\d?\\.\\d{1,2})\\s+(.+)$",
@@ -130,27 +131,45 @@
     "numberFormat": "（{chapter}-{index}）",
     "appendixNumberFormat": "（{appendix}-{index}）",
     "equationAlignment": "center",
+    "paragraphAlignment": "left",
+    "centerTabTwips": 4500,
     "numberAlignment": "right",
     "rightTabTwips": 9000
   },
   "figures": {
     "numberFormat": "图{chapter}.{index}",
     "captionPosition": "below",
-    "alignment": "center"
+    "alignment": "center",
+    "font": "仿宋",
+    "latinFont": "Times New Roman",
+    "fontSizeHalfPoints": 21,
+    "lineTwips": 240
   },
   "tables": {
     "numberFormat": "表{chapter}.{index}",
     "captionPosition": "above",
     "alignment": "center",
     "style": "three-line-table",
-    "cellAlignment": "left"
+    "cellAlignment": "left",
+    "repeatHeaderRow": true,
+    "captionFont": "仿宋",
+    "captionLatinFont": "Times New Roman",
+    "captionFontSizeHalfPoints": 21,
+    "captionLineTwips": 240,
+    "bodyFont": "仿宋",
+    "bodyLatinFont": "Times New Roman",
+    "bodyFontSizeHalfPoints": 21
   },
   "references": {
     "heading": "参考文献",
     "numberFormat": "[{index}]",
     "continuous": true,
     "orderByCitation": true,
-    "typePattern": "\\[(M|C|N|J|D|R|S|P|A|DB|CP|EB/OL|DB/OL)\\]"
+    "typePattern": "\\[(M|C|N|J|D|R|S|P|A|DB|CP|EB/OL|DB/OL)\\]",
+    "font": "仿宋",
+    "latinFont": "Times New Roman",
+    "fontSizeHalfPoints": 24,
+    "lineTwips": 360
   },
   "abstract": {
     "chineseKeywordsMin": 4,
