@@ -67,7 +67,7 @@ skills/docx-thesis-format/check_docx_format.sh --rules custom-rules.json input.d
 | 章标题：`第N章 标题`，小三仿宋，加粗，居中 | §5.1 | `analyzeChapterHeading` 检查+修复 | ✅ |
 | 节标题：`N.N  标题`，编号后 2 空格，四号仿宋，加粗，左对齐 | §5.2 | `analyzeSectionHeading` + `spaceFont=宋体` | ✅ |
 | 小节标题：`N.N.N 标题`，编号后 1 空格，小四仿宋，左对齐 | §5.3 | `analyzeSubsectionHeading` + `spaceFont=宋体` | ✅ |
-| 标题层级不超过三级、不跳级 | §5.4 | 未检查 | ❌ |
+| 标题层级不超过三级、不跳级 | §5.4 | `lastHeadingLevel` 追踪，章→小节跳级检测 | ✅ |
 
 ---
 
@@ -79,7 +79,7 @@ skills/docx-thesis-format/check_docx_format.sh --rules custom-rules.json input.d
 | 公式编号右对齐，格式 `（N-N）` | §6.2 | `rightTabTwips` + 编号格式修复 | ✅ |
 | 按章内连续编号 | §6.3 | `equationIndex` 按章重置，错误编号替换 | ✅ |
 | 附录公式编号 `（A-N）` | §6.3 | `appendixNumberFormat` 支持 | ✅ |
-| 公式不得使用图片代替 | §6.4 | 未检查 | ❌ |
+| 公式不得使用图片代替 | §6.4 | `checkImageBasedEquation` 检测含图片+编号段落 | ✅ |
 
 ---
 
@@ -109,7 +109,9 @@ skills/docx-thesis-format/check_docx_format.sh --rules custom-rules.json input.d
 | 表文字号：五号仿宋 | §8.2 | `bodyFontSizeHalfPoints=21`，`bodyFont=仿宋` | ✅ |
 | 跨页续表重复首行表头 | §8.3 | `repeatHeaderRow=true` | ✅ |
 | 缺失表题自动补全 | §8.1 | `insertMissingCaptions` | ✅ |
-| 跨页表、合并单元格、超宽表 | §8.3 | 未检查 | ❌ |
+| 超宽表（宽度超出版心）| §8.3 | `checkTableWidth` 对比 `tblW` 与版心宽度 | ✅ |
+| 合并单元格（横向/纵向）| §8.3 | `checkTableMergedCells` 检测 `gridSpan`/`vMerge` | ✅ |
+| 跨页复杂表格人工核查 | §8.3 | 未检查 | ❌ |
 
 ---
 
@@ -144,7 +146,7 @@ skills/docx-thesis-format/check_docx_format.sh --rules custom-rules.json input.d
 | 页眉左"浙大硕士学位论文"右当前章标题 | §11.2 | `headerLayout=left-prefix-right-current-title` 检测 | ✅ |
 | 页眉字体仿宋、字号小五 | §11.2 | `headerFont=仿宋`，`headerFontSizeHalfPoints=18` | ✅ |
 | 页脚含页码域 | §11.3 | `requirePageFieldInFooters` 检测 | ✅ |
-| 前置部分罗马数字、正文阿拉伯数字 | §11.3 | `frontMatterFormat=upperRoman` 配置（仅检测，不修复） | ⚠️ |
+| 前置部分罗马数字、正文阿拉伯数字 | §11.3 | `checkPageNumbering` → `pgNumType.fmt` 检查+修复 | ✅ |
 | 页眉具体文字内容修复 | §11.2 | 仅检测，不自动修复 | ⚠️ |
 
 ---
@@ -160,7 +162,7 @@ skills/docx-thesis-format/check_docx_format.sh --rules custom-rules.json input.d
 | 页眉文字与当前部分是否完全一致 | §12.1 |
 | 目录、图目录、表目录完整性与更新状态 | §12.1 |
 | 中英文摘要内容质量与关键词准确性 | §12.2 |
-| 复杂跨页表格、子图、合并单元格 | §12.2 |
+| 复杂跨页表格、多部分子图 | §12.2 |
 | 图片清晰度、版权与来源标注 | §12.2 |
 | 文献真实性、著录完整性与类型标识正确性 | §12.2 |
 

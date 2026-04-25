@@ -117,6 +117,7 @@ async function runCheck(inputPath, rules) {
   const issues = [];
   const context = createContext(rules, false, issues);
   analyzeDocument(docx, context);
+  insertMissingCaptions(docx, context);
   analyzeHeadersAndFooters(docx, context);
   return makeResult('check', inputPath, '', issues, context.stats);
 }
@@ -125,7 +126,9 @@ async function runFix(inputPath, outputPath, rules) {
   const docx = await loadDocx(inputPath);
   const issues = [];
   const context = createContext(rules, true, issues);
+  normalizeDocumentStyles(docx, rules);
   analyzeDocument(docx, context);
+  insertMissingCaptions(docx, context);
   analyzeHeadersAndFooters(docx, context);
   await saveDocx(docx, outputPath);
   return makeResult('fix', inputPath, outputPath, issues, context.stats);
@@ -186,6 +189,12 @@ function restorePreservedSpaces(xml) {
   return xml.replaceAll(SPACE_MARK, ' ');
 }
 
+function computeBodyWidthTwips(rules) {
+  if (!rules.page) return 0;
+  const profile = rules.page.allowedMarginProfiles?.[0];
+  return rules.page.widthTwips - (profile?.left || 0) - (profile?.right || 0);
+}
+
 function createContext(rules, fix, issues) {
   return {
     rules,
@@ -202,6 +211,8 @@ function createContext(rules, fix, issues) {
     inFigureCatalog: false,
     inTableCatalog: false,
     mainBodyStarted: false,
+    lastHeadingLevel: 0,
+    bodyWidthTwips: computeBodyWidthTwips(rules),
     stats: {
       paragraphs: 0,
       tables: 0,
@@ -219,6 +230,7 @@ function analyzeDocument(docx, context) {
   const body = getBody(docx.xmlFiles['word/document.xml']);
   if (!body?.elements) return;
 
+  cleanupMeaninglessBlankParagraphs(body, context);
   const bodyElements = body.elements.filter((element) => isElement(element));
   for (let i = 0; i < bodyElements.length; i++) {
     const element = bodyElements[i];
@@ -240,6 +252,29 @@ function analyzeDocument(docx, context) {
 function getBody(documentXml) {
   const document = findChild(documentXml, 'w:document');
   return findChild(document, 'w:body');
+}
+
+function cleanupMeaninglessBlankParagraphs(body, context) {
+  const elements = body.elements || [];
+  let logicalIndex = 0;
+  body.elements = elements.filter((element) => {
+    if (!isElement(element)) return true;
+    logicalIndex++;
+    if (element.name !== 'w:p') return true;
+    if (!isMeaninglessBlankParagraph(element)) return true;
+    addIssue(context, {
+      type: '无意义空行',
+      location: paragraphLocation(logicalIndex - 1),
+      current: '空白段落',
+      expected: '删除无意义空行',
+      fixable: true,
+    });
+    if (context.fix) {
+      context.stats.fixed++;
+      return false;
+    }
+    return true;
+  });
 }
 
 function analyzeParagraph(paragraph, context, index, siblings) {
@@ -295,6 +330,22 @@ function analyzeParagraph(paragraph, context, index, siblings) {
     context.currentChapter = chapter;
     context.currentAppendix = '';
     resetChapterCounters(context);
+    context.mainBodyStarted = true;
+    context.stats.headings++;
+    checkAndFixChapter(paragraph, trimmed, context, index);
+    context.inReferences = false;
+    return;
+  }
+
+  if (isFirstLevelHeading(paragraph, trimmed)) {
+    const inferredChapter = inferChapterNumberFromFirstLevelHeading(trimmed, context);
+    if (inferredChapter) {
+      context.currentChapter = inferredChapter;
+      context.currentAppendix = '';
+      resetChapterCounters(context);
+    }
+    context.currentAppendix = '';
+    context.mainBodyStarted = true;
     context.stats.headings++;
     checkAndFixChapter(paragraph, trimmed, context, index);
     context.inReferences = false;
@@ -323,6 +374,7 @@ function analyzeParagraph(paragraph, context, index, siblings) {
   if (checkAndFixSection(paragraph, trimmed, context, index)) return;
   if (checkAndFixFigureCaption(paragraph, trimmed, context, index, siblings)) return;
   if (checkAndFixTableCaption(paragraph, trimmed, context, index, siblings)) return;
+  if (checkImageBasedEquation(paragraph, trimmed, context, index)) return;
   if (checkAndFixEquation(paragraph, trimmed, context, index)) return;
   if (context.inReferences && checkAndFixReference(paragraph, trimmed, context, index)) return;
   checkAndFixAbstract(paragraph, trimmed, context, index);
@@ -353,6 +405,30 @@ function parseChineseNumber(value) {
   return digits[value] || 0;
 }
 
+function parseLeadingChineseHeadingNumber(text) {
+  const match = text.match(/^([一二三四五六七八九十]+)、/);
+  if (!match) return 0;
+  return parseChineseNumber(match[1]);
+}
+
+function inferChapterNumberFromFirstLevelHeading(text, context) {
+  const explicit = parseChapterTitle(text);
+  if (explicit) return explicit;
+  const leadingChinese = parseLeadingChineseHeadingNumber(text);
+  if (leadingChinese) return leadingChinese;
+  if (context.mainBodyStarted) return Math.max(1, context.currentChapter + 1);
+  return 0;
+}
+
+function syncChapterFromHeadingNumber(numberText, context) {
+  const chapter = Number(String(numberText).split('.')[0]);
+  if (!chapter || chapter === context.currentChapter) return;
+  context.currentChapter = chapter;
+  context.currentAppendix = '';
+  resetChapterCounters(context);
+  context.mainBodyStarted = true;
+}
+
 function checkAndFixChapter(paragraph, text, context, index) {
   const rule = context.rules.headings.chapter;
   const ok = paragraphHasStyle(paragraph, {
@@ -360,13 +436,14 @@ function checkAndFixChapter(paragraph, text, context, index) {
     font: rule.font,
     size: rule.fontSizeHalfPoints,
     bold: rule.bold,
+    pageBreakBefore: rule.pageBreakBefore,
   });
   if (!ok) {
     addIssue(context, {
       type: '章标题格式',
       location: paragraphLocation(index),
       current: text,
-      expected: '小三号仿宋加粗居中',
+      expected: '小三号仿宋加粗居中，段前分页',
       fixable: true,
     });
     setParagraphStyle(paragraph, {
@@ -375,16 +452,29 @@ function checkAndFixChapter(paragraph, text, context, index) {
       latinFont: rule.latinFont,
       size: rule.fontSizeHalfPoints,
       bold: rule.bold,
+      pageBreakBefore: rule.pageBreakBefore,
       fix: context.fix,
     });
     if (context.fix) context.stats.fixed++;
   }
+  context.lastHeadingLevel = 1;
 }
 
 function checkAndFixSubsection(paragraph, text, context, index) {
-  const match = text.match(/^([1-9]\d?\.\d{1,2}\.\d{1,2})(\s+)(.+)$/);
+  const match = text.match(/^([1-9]\d?\.\d{1,2}\.\d{1,2})(\s*)(.+)$/);
   if (!match) return false;
+  syncChapterFromHeadingNumber(match[1], context);
   context.stats.headings++;
+  if (context.mainBodyStarted && context.lastHeadingLevel > 0 && context.lastHeadingLevel < 2) {
+    addIssue(context, {
+      type: '标题跳级',
+      location: paragraphLocation(index),
+      current: `第 3 级小节标题"${match[1]}"，上一标题为第 ${context.lastHeadingLevel} 级`,
+      expected: '第 3 级小节标题前应先出现第 2 级节标题（如 N.N  节标题）',
+      fixable: false,
+    });
+  }
+  context.lastHeadingLevel = 3;
   const rule = context.rules.headings.subsection;
   const expected = `${match[1]}${' '.repeat(rule.spacesAfterNumber)}${match[3].trim()}`;
   const ok = match[2].length === rule.spacesAfterNumber && paragraphHasStyle(paragraph, {
@@ -415,9 +505,11 @@ function checkAndFixSubsection(paragraph, text, context, index) {
 }
 
 function checkAndFixSection(paragraph, text, context, index) {
-  const match = text.match(/^([1-9]\d?\.\d{1,2})(\s+)(.+)$/);
+  const match = text.match(/^([1-9]\d?\.\d{1,2})(?!\.)(\s*)(.+)$/);
   if (!match) return false;
+  syncChapterFromHeadingNumber(match[1], context);
   context.stats.headings++;
+  context.lastHeadingLevel = 2;
   const rule = context.rules.headings.section;
   const ok = match[2].length === rule.spacesAfterNumber && paragraphHasStyle(paragraph, {
     alignment: rule.alignment,
@@ -457,20 +549,29 @@ function checkAndFixFigureCaption(paragraph, text, context, index, siblings) {
   const expected = `${expectedNumber}${title ? ` ${title}` : ''}`;
   const belowImage = hasNearbyDrawingBefore(siblings, index);
   const numberOk = text.startsWith(expectedNumber);
-  const alignOk = paragraphAlignment(paragraph) === context.rules.figures.alignment;
+  const styleOk = paragraphHasStyle(paragraph, {
+    alignment: context.rules.figures.alignment,
+    font: context.rules.figures.font,
+    size: context.rules.figures.fontSizeHalfPoints,
+    line: context.rules.figures.lineTwips,
+    bold: false,
+  }) && paragraphRunsMatchStyle(paragraph, {
+    font: context.rules.figures.font,
+    size: context.rules.figures.fontSizeHalfPoints,
+  });
 
-  if (!numberOk || !alignOk || !belowImage) {
+  if (!numberOk || !styleOk || !belowImage) {
     addIssue(context, {
       type: '图题格式',
       location: paragraphLocation(index),
       current: text,
-      expected: `${expectedNumber}，图题位于图下方并居中`,
+      expected: `${expectedNumber}，图题位于图下方并居中，五号仿宋/Times New Roman，单倍行距`,
       fixable: true,
       note: belowImage ? '' : '未在图题前近邻位置识别到图片，需人工确认图题位置',
     });
     if (context.fix) {
-      setParagraphText(paragraph, expected, context.rules.body.eastAsiaFont, context.rules.body.latinFont, context.rules.body.fontSizeHalfPoints);
-      setParagraphProps(paragraph, { alignment: context.rules.figures.alignment, spacingLine: 360 });
+      setParagraphText(paragraph, expected, context.rules.figures.font, context.rules.figures.latinFont, context.rules.figures.fontSizeHalfPoints);
+      setParagraphProps(paragraph, { alignment: context.rules.figures.alignment, spacingLine: context.rules.figures.lineTwips });
       context.stats.fixed++;
     }
   }
@@ -479,36 +580,93 @@ function checkAndFixFigureCaption(paragraph, text, context, index, siblings) {
 
 function checkAndFixTableCaption(paragraph, text, context, index, siblings) {
   if (text === '表目录') return false;
-  if (!/^表\s*\S+/.test(text)) return false;
+  if (isEnglishTableCaptionText(text)) {
+    checkAndFixEnglishTableCaption(paragraph, text, context, index, siblings);
+    return true;
+  }
+  if (!isChineseTableCaptionText(text)) return false;
   context.tableIndex++;
   const chapter = context.currentAppendix || context.currentChapter || '?';
   const expectedNumber = `表${chapter}.${context.tableIndex}`;
   const title = text.replace(/^表\s*[A-Z0-9一二三四五六七八九十]+[.-]\d+\s*/i, '').replace(/^表\s*/, '').trim();
   const expected = `${expectedNumber}${title ? ` ${title}` : ''}`;
-  const aboveTable = siblings[index + 1]?.name === 'w:tbl';
+  const nextContentIndex = findNextNonBlankParagraphSiblingIndex(siblings, index);
+  const aboveTable = nextContentIndex >= 0 && siblings[nextContentIndex]?.name === 'w:tbl';
   const numberOk = text.startsWith(expectedNumber);
-  const alignOk = paragraphAlignment(paragraph) === context.rules.tables.alignment;
+  const styleOk = paragraphHasStyle(paragraph, {
+    alignment: context.rules.tables.alignment,
+    font: context.rules.tables.captionFont,
+    size: context.rules.tables.captionFontSizeHalfPoints,
+    line: context.rules.tables.captionLineTwips,
+    bold: false,
+  }) && paragraphRunsMatchStyle(paragraph, {
+    font: context.rules.tables.captionFont,
+    size: context.rules.tables.captionFontSizeHalfPoints,
+  });
 
-  if (!numberOk || !alignOk || !aboveTable) {
+  if (!numberOk || !styleOk || !aboveTable) {
     addIssue(context, {
       type: '表题格式',
       location: paragraphLocation(index),
       current: text,
-      expected: `${expectedNumber}，表题位于表上方并居中`,
+      expected: `${expectedNumber}，表题位于表上方并居中，五号仿宋/Times New Roman，单倍行距`,
       fixable: true,
       note: aboveTable ? '' : '未在表题后紧邻位置识别到表格，需人工确认表题位置',
     });
     if (context.fix) {
-      setParagraphText(paragraph, expected, context.rules.body.eastAsiaFont, context.rules.body.latinFont, context.rules.body.fontSizeHalfPoints);
-      setParagraphProps(paragraph, { alignment: context.rules.tables.alignment, spacingLine: 360 });
+      setParagraphText(paragraph, expected, context.rules.tables.captionFont, context.rules.tables.captionLatinFont, context.rules.tables.captionFontSizeHalfPoints);
+      setParagraphProps(paragraph, { alignment: context.rules.tables.alignment, spacingLine: context.rules.tables.captionLineTwips });
       context.stats.fixed++;
     }
   }
   return true;
 }
 
+function checkAndFixEnglishTableCaption(paragraph, text, context, index, siblings) {
+  const nextContentIndex = findNextNonBlankParagraphSiblingIndex(siblings, index);
+  const aboveTable = nextContentIndex >= 0 && siblings[nextContentIndex]?.name === 'w:tbl';
+  const prevContentIndex = findPrevNonBlankParagraphSiblingIndex(siblings, index);
+  const prevText = normalizeSpaces(getParagraphText(siblings[prevContentIndex] || {})).trim();
+  const precededByChinese = isChineseTableCaptionText(prevText);
+  const styleOk = paragraphHasStyle(paragraph, {
+    alignment: context.rules.tables.alignment,
+    font: context.rules.tables.captionFont,
+    size: context.rules.tables.captionFontSizeHalfPoints,
+    line: context.rules.tables.captionLineTwips,
+    bold: false,
+  }) && paragraphRunsMatchStyle(paragraph, {
+    font: context.rules.tables.captionFont,
+    size: context.rules.tables.captionFontSizeHalfPoints,
+  });
+  if (!styleOk || !aboveTable || !precededByChinese) {
+    addIssue(context, {
+      type: '英文表题格式',
+      location: paragraphLocation(index),
+      current: text,
+      expected: '英文表题应紧随中文表题、位于表上方，并使用五号仿宋/Times New Roman、单倍行距、居中',
+      fixable: true,
+      note: [
+        precededByChinese ? '' : '前一段未识别到对应中文表题',
+        aboveTable ? '' : '下一正文元素未识别到表格',
+      ].filter(Boolean).join('；'),
+    });
+    if (context.fix) {
+      setParagraphStyle(paragraph, {
+        alignment: context.rules.tables.alignment,
+        font: context.rules.tables.captionFont,
+        latinFont: context.rules.tables.captionLatinFont,
+        size: context.rules.tables.captionFontSizeHalfPoints,
+        line: context.rules.tables.captionLineTwips,
+        bold: false,
+        fix: true,
+      });
+      context.stats.fixed++;
+    }
+  }
+}
+
 function checkAndFixEquation(paragraph, text, context, index) {
-  const hasEquation = hasMath(paragraph) || /[（(]\s*[A-Z0-9]+[-.]\d+\s*[）)]/.test(text);
+  const hasEquation = hasDisplayMathPara(paragraph) || looksLikeDisplayedEquationText(text);
   if (!hasEquation) return false;
   context.equationIndex++;
   context.stats.equations++;
@@ -517,7 +675,11 @@ function checkAndFixEquation(paragraph, text, context, index) {
     ? context.rules.equations.appendixNumberFormat.replace('{appendix}', prefix).replace('{index}', context.equationIndex)
     : context.rules.equations.numberFormat.replace('{chapter}', prefix).replace('{index}', context.equationIndex);
   const numberOk = text.includes(expected);
-  const alignOk = paragraphAlignment(paragraph) === context.rules.equations.equationAlignment;
+  const alignOk =
+    paragraphAlignment(paragraph) === (context.rules.equations.paragraphAlignment || 'left') &&
+    mathAlignment(paragraph) === context.rules.equations.equationAlignment &&
+    hasEquationTabLayout(paragraph, context.rules.equations) &&
+    !paragraphHasFirstLineIndent(paragraph);
 
   if (!numberOk || !alignOk) {
     addIssue(context, {
@@ -529,12 +691,20 @@ function checkAndFixEquation(paragraph, text, context, index) {
     });
     if (context.fix) {
       stripEquationNumber(paragraph);
+      ensureEquationLeadingCenterTab(paragraph);
       appendEquationNumber(paragraph, expected, context.rules);
       setParagraphProps(paragraph, {
-        alignment: context.rules.equations.equationAlignment,
+        alignment: context.rules.equations.paragraphAlignment || 'left',
         spacingLine: 360,
-        rightTabTwips: context.rules.equations.rightTabTwips,
+        firstLine: 0,
+        hanging: 0,
+        resetInd: true,
+        tabs: [
+          { val: 'center', pos: context.rules.equations.centerTabTwips || Math.round((context.rules.equations.rightTabTwips || 9000) / 2) },
+          { val: 'right', pos: context.rules.equations.rightTabTwips },
+        ],
       });
+      setMathParagraphAlignment(paragraph, context.rules.equations.equationAlignment);
       context.stats.fixed++;
     }
   }
@@ -553,19 +723,46 @@ function checkAndFixReference(paragraph, text, context, index) {
   const typeRe = new RegExp(context.rules.references.typePattern);
   const numberOk = text.startsWith(expectedPrefix);
   const typeOk = typeRe.test(text);
-  if (!numberOk || !typeOk) {
+  const styleOk = paragraphHasStyle(paragraph, {
+    alignment: 'left',
+    font: context.rules.references.font,
+    size: context.rules.references.fontSizeHalfPoints,
+    line: context.rules.references.lineTwips,
+  }) && paragraphRunsMatchStyle(paragraph, {
+    font: context.rules.references.font,
+    size: context.rules.references.fontSizeHalfPoints,
+  });
+  if (!numberOk || !typeOk || !styleOk) {
     addIssue(context, {
       type: '参考文献格式',
       location: paragraphLocation(index),
       current: text,
-      expected: `${expectedPrefix} 开头，并包含 [M]/[J]/[D]/[EB/OL] 等类型标识`,
-      fixable: numberOk ? false : true,
+      expected: `${expectedPrefix} 开头，小四仿宋/Times New Roman，1.5 倍行距，并包含 [M]/[J]/[D]/[EB/OL] 等类型标识`,
+      fixable: !typeOk ? numberOk && styleOk : true,
       note: typeOk ? '' : '文献类型标识缺失或无法识别，需人工复核',
     });
-    if (context.fix && !numberOk) {
+    if (context.fix && typeOk) {
       const body = text.replace(/^\s*\[?\d+\]?\s*/, '').trim();
-      setParagraphText(paragraph, `${expectedPrefix} ${body}`, context.rules.body.eastAsiaFont, context.rules.body.latinFont, context.rules.body.fontSizeHalfPoints);
-      setParagraphProps(paragraph, { alignment: 'left', spacingLine: 360, firstLine: 0, hanging: 420 });
+      const normalized = `${expectedPrefix} ${body}`;
+      if (!numberOk) {
+        setParagraphText(
+          paragraph,
+          normalized,
+          context.rules.references.font,
+          context.rules.references.latinFont,
+          context.rules.references.fontSizeHalfPoints,
+        );
+      }
+      setParagraphStyle(paragraph, {
+        alignment: 'left',
+        font: context.rules.references.font,
+        latinFont: context.rules.references.latinFont,
+        size: context.rules.references.fontSizeHalfPoints,
+        line: context.rules.references.lineTwips,
+        bold: false,
+        fix: true,
+      });
+      setParagraphProps(paragraph, { alignment: 'left', spacingLine: context.rules.references.lineTwips, firstLine: 0, hanging: 420 });
       context.stats.fixed++;
     }
   }
@@ -604,9 +801,7 @@ function checkAndFixAbstract(paragraph, text, context, index) {
 function checkAndFixBodyParagraph(paragraph, context, index) {
   if (context.inReferences) return;
   const text = getParagraphText(paragraph).trim();
-  if (!text || hasMath(paragraph) || looksLikeTocLine(text)) return;
-  if (!context.currentChapter && !context.currentAppendix && !looksLikeDateTimelineItem(text)) return;
-  if (isSpecialSectionHeading(text)) return;
+  if (!shouldTreatAsBodyParagraph(paragraph, text, context)) return;
   const ok = paragraphHasStyle(paragraph, {
     alignment: context.rules.body.alignment,
     font: context.rules.body.eastAsiaFont,
@@ -649,25 +844,261 @@ function looksLikeDateTimelineItem(text) {
   return /^20\d{2}\.(0?[1-9]|1[0-2])(\.\d{1,2})?\s+/.test(text);
 }
 
+function shouldTreatAsBodyParagraph(paragraph, text, context) {
+  if (!text || hasMath(paragraph) || looksLikeTocLine(text) || hasDrawing(paragraph)) return false;
+  if (isSpecialSectionHeading(text) || isMajorBackMatterHeading(text)) return false;
+  if (looksLikeChapterHeadingText(text) || looksLikeSectionHeadingText(text) || looksLikeSubsectionHeadingText(text)) return false;
+  if (/^(图|表)\s*\S+/.test(text)) return false;
+  if (looksLikePureUrlLine(text)) return false;
+  if (context.currentChapter || context.currentAppendix || context.mainBodyStarted || looksLikeDateTimelineItem(text)) return true;
+  return looksLikeLikelyBodyText(paragraph, text);
+}
+
+function looksLikeLikelyBodyText(paragraph, text) {
+  const alignment = paragraphAlignment(paragraph);
+  if (alignment === 'center' || alignment === 'right') return false;
+  if (text.length < 16) return false;
+  if (/^[A-Z0-9 ./:_-]+$/.test(text)) return false;
+  if ((text.match(/[，。；：！？,.!?]/g) || []).length > 0) return true;
+  return text.length >= 28;
+}
+
+function looksLikePureUrlLine(text) {
+  return /^https?:\/\/\S+$/i.test(text) || /^www\.\S+$/i.test(text);
+}
+
+function looksLikeChapterHeadingText(text) {
+  return Boolean(parseChapterTitle(text) || parseLeadingChineseHeadingNumber(text));
+}
+
+function isFirstLevelHeading(paragraph, text) {
+  if (!text || text.length > 40) return false;
+  if (isMajorBackMatterHeading(text)) return false;
+  const styleId = paragraphStyleId(paragraph);
+  if (styleId === '1') return true;
+  return /^[一二三四五六七八九十]+、\S+/.test(text);
+}
+
+function looksLikeSectionHeadingText(text) {
+  return /^([1-9]\d?\.\d{1,2})(?!\.)(\s*)(.+)$/.test(text);
+}
+
+function looksLikeSubsectionHeadingText(text) {
+  return /^([1-9]\d?\.\d{1,2}\.\d{1,2})(\s*)(.+)$/.test(text);
+}
+
+function looksLikeDisplayedEquationText(text) {
+  if (!text) return false;
+  const numberRe = /[（(]\s*[A-Z0-9]+[-.]\d+\s*[）)]/g;
+  if (!numberRe.test(text)) return false;
+  const stripped = text.replace(numberRe, '').trim();
+  if (!stripped) return true;
+  if (/[\u4e00-\u9fff]/.test(stripped)) return false;
+  if (/[=+\-×÷/*∑∏√≤≥<>]/.test(stripped)) return true;
+  return /^[A-Za-z0-9_()[\]\s.,]+$/.test(stripped) && stripped.length <= 24;
+}
+
+function insertMissingCaptions(docx, context) {
+  const body = getBody(docx.xmlFiles['word/document.xml']);
+  if (!body?.elements) return;
+
+  const elements = body.elements;
+  const items = elements.filter(isElement);
+  let currentChapter = 0;
+  let tableIndex = 0;
+  let figureIndex = 0;
+  const insertions = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const el = items[i];
+
+    if (el.name === 'w:p') {
+      const text = normalizeSpaces(getParagraphText(el)).trim();
+      const ch = parseChapterTitle(text);
+      if (ch) {
+        currentChapter = ch; tableIndex = 0; figureIndex = 0;
+      } else if (isFirstLevelHeading(el, text)) {
+        currentChapter++; tableIndex = 0; figureIndex = 0;
+      } else {
+        const secMatch = text.match(/^([1-9]\d?\.\d{1,2})(?!\.)(\s*)(.+)$/);
+        if (secMatch) {
+          const secCh = Number(String(secMatch[1]).split('.')[0]);
+          if (secCh && secCh !== currentChapter) { currentChapter = secCh; tableIndex = 0; figureIndex = 0; }
+        }
+      }
+
+      if (hasDrawing(el)) {
+        figureIndex++;
+        const nextEl = items[i + 1];
+        const nextText = nextEl?.name === 'w:p' ? normalizeSpaces(getParagraphText(nextEl)).trim() : '';
+        if (!/^图\s*\S+/.test(nextText)) {
+          const prefix = currentChapter || '?';
+          const label = `图${prefix}.${figureIndex} （待补充）`;
+          addIssue(context, {
+            type: '图题缺失',
+            location: `正文第 ${i + 1} 个元素`,
+            current: '图片缺少图题',
+            expected: `在图下方插入：${label}`,
+            fixable: true,
+          });
+          if (context.fix) {
+            insertions.push({ refElement: el, position: 'after', newElement: makeCaptionParagraph(label, context.rules.figures, 'figure') });
+            context.stats.fixed++;
+          }
+        }
+      }
+    }
+
+    if (el.name === 'w:tbl') {
+      tableIndex++;
+      if (!hasTableCaptionBlockAbove(items, i)) {
+        const prefix = currentChapter || '?';
+        const label = `表${prefix}.${tableIndex} （待补充）`;
+        addIssue(context, {
+          type: '表题缺失',
+          location: `正文第 ${i + 1} 个元素`,
+          current: '表格缺少表题',
+          expected: `在表格上方插入：${label}`,
+          fixable: true,
+        });
+        if (context.fix) {
+          insertions.push({ refElement: el, position: 'before', newElement: makeCaptionParagraph(label, context.rules.tables, 'caption') });
+          context.stats.fixed++;
+        }
+      }
+    }
+  }
+
+  for (const ins of [...insertions].reverse()) {
+    const pos = elements.indexOf(ins.refElement);
+    if (pos === -1) continue;
+    elements.splice(ins.position === 'before' ? pos : pos + 1, 0, ins.newElement);
+  }
+}
+
+function hasTableCaptionBlockAbove(items, tableIndex) {
+  const prevIndex = findPrevNonBlankParagraphSiblingIndex(items, tableIndex);
+  const prevEl = items[prevIndex];
+  const prevText = prevEl?.name === 'w:p' ? normalizeSpaces(getParagraphText(prevEl)).trim() : '';
+  if (isChineseTableCaptionText(prevText)) return true;
+  if (isEnglishTableCaptionText(prevText)) {
+    const prevPrevIndex = findPrevNonBlankParagraphSiblingIndex(items, prevIndex);
+    const prevPrevEl = items[prevPrevIndex];
+    const prevPrevText = prevPrevEl?.name === 'w:p' ? normalizeSpaces(getParagraphText(prevPrevEl)).trim() : '';
+    return isChineseTableCaptionText(prevPrevText);
+  }
+  return false;
+}
+
+function makeCaptionParagraph(text, rules, type) {
+  const font = type === 'caption' ? (rules.captionFont || '仿宋') : (rules.font || '仿宋');
+  const latinFont = type === 'caption' ? (rules.captionLatinFont || 'Times New Roman') : (rules.latinFont || 'Times New Roman');
+  const size = type === 'caption' ? (rules.captionFontSizeHalfPoints || 21) : (rules.fontSizeHalfPoints || 21);
+  const lineTwips = type === 'caption' ? (rules.captionLineTwips || 240) : (rules.lineTwips || 240);
+  const para = { type: 'element', name: 'w:p', elements: [] };
+  setParagraphRuns(para, [textRun(text, font, latinFont, size, false)]);
+  setParagraphProps(para, { alignment: 'center', spacingLine: lineTwips });
+  return para;
+}
+
+function isChineseTableCaptionText(text) {
+  return /^表\s*\S+/.test(text);
+}
+
+function isEnglishTableCaptionText(text) {
+  return /^Table\s+\d+\.\d+\b/i.test(text);
+}
+
+function findPrevNonBlankParagraphSiblingIndex(items, startIndex) {
+  for (let i = startIndex - 1; i >= 0; i--) {
+    const item = items[i];
+    if (item?.name === 'w:tbl') return i;
+    if (item?.name !== 'w:p') return i;
+    if (!isMeaninglessBlankParagraph(item)) return i;
+  }
+  return -1;
+}
+
+function findNextNonBlankParagraphSiblingIndex(items, startIndex) {
+  for (let i = startIndex + 1; i < items.length; i++) {
+    const item = items[i];
+    if (item?.name === 'w:tbl') return i;
+    if (item?.name !== 'w:p') return i;
+    if (!isMeaninglessBlankParagraph(item)) return i;
+  }
+  return -1;
+}
+
 function analyzeTable(table, context, index) {
   const expectedCellAlignment = context.rules.tables?.cellAlignment || 'left';
   const tableOk = isThreeLineTable(table);
   const alignmentOk = tableCellsHaveParagraphAlignment(table, expectedCellAlignment);
-  if (!tableOk || !alignmentOk) {
+  const bodyStyleOk = tableCellsHaveBodyStyle(table, context.rules.tables || {});
+  const repeatHeaderOk = context.rules.tables?.repeatHeaderRow ? tableHasRepeatHeaderRow(table) : true;
+  if (!tableOk || !alignmentOk || !bodyStyleOk || !repeatHeaderOk) {
     addIssue(context, {
       type: '表格三线表',
       location: `第 ${index + 1} 个正文元素附近`,
       current: [
         tableOk ? '' : '表格边框不是标准三线表',
         alignmentOk ? '' : `单元格内容未统一${alignmentName(expectedCellAlignment)}对齐`,
+        bodyStyleOk ? '' : '表文字号或字体不符合五号仿宋/Times New Roman',
+        repeatHeaderOk ? '' : '未设置跨页续表表头（重复标题行）',
       ].filter(Boolean).join('；'),
-      expected: `顶线、表头下线、底线；不使用竖线；单元格内容水平${alignmentName(expectedCellAlignment)}对齐`,
+      expected: `顶线、表头下线、底线；不使用竖线；单元格内容水平${alignmentName(expectedCellAlignment)}对齐；表文五号仿宋/Times New Roman；跨页时重复表头`,
       fixable: true,
     });
     if (context.fix) {
       applyThreeLineTable(table, expectedCellAlignment);
+      applyTableBodyStyle(table, context.rules.tables || {});
+      if (context.rules.tables?.repeatHeaderRow) applyRepeatHeaderRow(table);
       context.stats.fixed++;
     }
+  }
+  checkTableWidth(table, context, index);
+  checkTableMergedCells(table, context, index);
+}
+
+function checkTableWidth(table, context, index) {
+  if (!context.bodyWidthTwips) return;
+  const tblPr = findChild(table, 'w:tblPr');
+  const tblW = findChild(tblPr, 'w:tblW');
+  if (!tblW) return;
+  const type = attr(tblW, 'type');
+  const w = Number(attr(tblW, 'w') || 0);
+  if (type === 'dxa' && w > context.bodyWidthTwips) {
+    const cmW = Math.round(w * 2.54 / 1440 * 10) / 10;
+    const cmLimit = Math.round(context.bodyWidthTwips * 2.54 / 1440 * 10) / 10;
+    addIssue(context, {
+      type: '表格超宽',
+      location: `第 ${index + 1} 个正文元素附近`,
+      current: `表格宽度 ${w} twips（约 ${cmW} cm）`,
+      expected: `不超过版心宽度 ${context.bodyWidthTwips} twips（约 ${cmLimit} cm）`,
+      fixable: false,
+      note: '表格宽度超出版心，需人工调整列宽或表格缩进',
+    });
+  }
+}
+
+function checkTableMergedCells(table, context, index) {
+  let hasHMerge = false;
+  let hasVMerge = false;
+  for (const row of findChildren(table, 'w:tr')) {
+    for (const cell of findChildren(row, 'w:tc')) {
+      const tcPr = findChild(cell, 'w:tcPr');
+      if (Number(attr(findChild(tcPr, 'w:gridSpan'), 'val') || 1) > 1) hasHMerge = true;
+      if (findChild(tcPr, 'w:vMerge')) hasVMerge = true;
+    }
+  }
+  if (hasHMerge || hasVMerge) {
+    addIssue(context, {
+      type: '表格合并单元格',
+      location: `第 ${index + 1} 个正文元素附近`,
+      current: [hasHMerge ? '含横向合并单元格' : '', hasVMerge ? '含纵向合并单元格' : ''].filter(Boolean).join('，'),
+      expected: '合并单元格表格需人工核查格式与内容一致性',
+      fixable: false,
+      note: '三线表转换和单元格样式修复对合并单元格表格可能不完整，建议人工复核',
+    });
   }
 }
 
@@ -1136,12 +1567,60 @@ function hasMath(paragraph) {
   return found;
 }
 
+function hasDisplayMathPara(paragraph) {
+  // 1. 明确的块公式容器 <m:oMathPara>：始终算展示公式
+  let hasPara = false;
+  walk(paragraph, (node) => { if (node.name === 'm:oMathPara') hasPara = true; });
+  if (hasPara) return true;
+
+  // 2. 无 <m:oMathPara> 但段落直接子节点有 <m:oMath>（独立展示公式段）
+  //    判据：段落内中文字符少于 4 个（排除"正文里顺带提到公式"的情况）
+  const hasTopLevelMath = (paragraph.elements || []).some((child) => child.name === 'm:oMath');
+  if (!hasTopLevelMath) return false;
+  const text = getParagraphText(paragraph);
+  const chineseChars = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+  return chineseChars < 4;
+}
+
 function hasDrawing(node) {
   let found = false;
   walk(node, (child) => {
     if (child.name === 'w:drawing' || child.name === 'w:pict') found = true;
   });
   return found;
+}
+
+function checkImageBasedEquation(paragraph, text, context, index) {
+  if (!hasDrawing(paragraph)) return false;
+  if (!looksLikeDisplayedEquationText(text)) return false;
+  context.equationIndex++;
+  context.stats.equations++;
+  addIssue(context, {
+    type: '图片公式',
+    location: paragraphLocation(index),
+    current: text || '[图片+公式编号]',
+    expected: '公式应使用可编辑的数学对象（OMML），不应以图片代替',
+    fixable: false,
+    note: '检测到段落同时包含图片与公式编号，请将图片替换为 Word 数学公式对象',
+  });
+  return true;
+}
+
+function hasExplicitBreak(node) {
+  let found = false;
+  walk(node, (child) => {
+    if (child.name === 'w:br' || child.name === 'w:cr' || child.name === 'w:lastRenderedPageBreak') found = true;
+  });
+  return found;
+}
+
+function isMeaninglessBlankParagraph(paragraph) {
+  const text = normalizeSpaces(getParagraphText(paragraph)).trim();
+  if (text) return false;
+  if (hasMath(paragraph) || hasDrawing(paragraph) || hasExplicitBreak(paragraph)) return false;
+  const pPr = findChild(paragraph, 'w:pPr');
+  if (findChild(pPr, 'w:sectPr') || findChild(pPr, 'w:pageBreakBefore')) return false;
+  return true;
 }
 
 function hasNearbyDrawingBefore(siblings, index) {
@@ -1160,6 +1639,10 @@ function paragraphAlignment(paragraph) {
 function paragraphHasStyle(paragraph, expected) {
   const pPr = findChild(paragraph, 'w:pPr');
   if (expected.alignment && paragraphAlignment(paragraph) !== expected.alignment) return false;
+  if (expected.pageBreakBefore !== undefined) {
+    const hasPageBreakBefore = Boolean(findChild(pPr, 'w:pageBreakBefore'));
+    if (hasPageBreakBefore !== expected.pageBreakBefore) return false;
+  }
   const spacing = findChild(pPr, 'w:spacing');
   if (expected.line && spacing?.attributes?.['w:line'] !== String(expected.line)) return false;
   if (expected.before !== undefined && (spacing?.attributes?.['w:before'] || '0') !== String(expected.before)) return false;
@@ -1174,6 +1657,27 @@ function paragraphHasStyle(paragraph, expected) {
   const fonts = findChild(rPr, 'w:rFonts');
   if (expected.font && fonts?.attributes?.['w:eastAsia'] !== expected.font) return false;
   const sz = findChild(rPr, 'w:sz');
+  if (expected.size && sz?.attributes?.['w:val'] !== String(expected.size)) return false;
+  if (expected.bold !== undefined) {
+    const hasBold = Boolean(findChild(rPr, 'w:b'));
+    if (hasBold !== expected.bold) return false;
+  }
+  return true;
+}
+
+function paragraphRunsMatchStyle(paragraph, expected) {
+  const runs = findChildren(paragraph, 'w:r');
+  const nonEmptyRuns = runs.filter((run) => getParagraphText(run).trim());
+  if (!nonEmptyRuns.length) return true;
+  return nonEmptyRuns.every((run) => runMatchesStyle(run, expected));
+}
+
+function runMatchesStyle(run, expected) {
+  const rPr = findChild(run, 'w:rPr');
+  if (!rPr) return false;
+  const fonts = findChild(rPr, 'w:rFonts');
+  const sz = findChild(rPr, 'w:sz');
+  if (expected.font && fonts?.attributes?.['w:eastAsia'] !== expected.font) return false;
   if (expected.size && sz?.attributes?.['w:val'] !== String(expected.size)) return false;
   if (expected.bold !== undefined) {
     const hasBold = Boolean(findChild(rPr, 'w:b'));
@@ -1210,10 +1714,14 @@ function setParagraphStyle(paragraph, options) {
   setParagraphProps(paragraph, {
     alignment: options.alignment,
     spacingLine: options.line,
+    before: options.before,
+    after: options.after,
     firstLine: options.firstLine,
     resetInd: options.resetInd,
     clearShading: options.clearShading,
+    pageBreakBefore: options.pageBreakBefore,
   });
+  setParagraphDefaultRunStyle(paragraph, options.font, options.latinFont, options.size, options.bold);
   for (const run of findChildren(paragraph, 'w:r')) {
     setRunStyle(run, options.font, options.latinFont, options.size, options.bold);
   }
@@ -1242,7 +1750,22 @@ function setParagraphProps(paragraph, options = {}) {
     if (options.firstLine !== undefined) ind.attributes['w:firstLine'] = String(options.firstLine);
     if (options.hanging !== undefined) ind.attributes['w:hanging'] = String(options.hanging);
   }
-  if (options.rightTabTwips) {
+  if (options.pageBreakBefore !== undefined) {
+    removeChildren(pPr, ['w:pageBreakBefore']);
+    if (options.pageBreakBefore) {
+      pPr.elements.push({ type: 'element', name: 'w:pageBreakBefore', elements: [] });
+    }
+  }
+  if (options.tabs?.length) {
+    const tabs = ensureChild(pPr, 'w:tabs');
+    removeChildren(tabs, ['w:tab']);
+    tabs.elements.push(...options.tabs.map((tab) => ({
+      type: 'element',
+      name: 'w:tab',
+      attributes: { 'w:val': tab.val, 'w:pos': String(tab.pos) },
+      elements: [],
+    })));
+  } else if (options.rightTabTwips) {
     const tabs = ensureChild(pPr, 'w:tabs');
     removeChildren(tabs, ['w:tab']);
     tabs.elements.push({
@@ -1254,22 +1777,68 @@ function setParagraphProps(paragraph, options = {}) {
   }
 }
 
+function paragraphStyleId(paragraph) {
+  return findChild(findChild(paragraph, 'w:pPr'), 'w:pStyle')?.attributes?.['w:val'] || '';
+}
+
+function paragraphHasFirstLineIndent(paragraph) {
+  const ind = findChild(findChild(paragraph, 'w:pPr'), 'w:ind');
+  return Boolean(ind?.attributes?.['w:firstLine'] && ind.attributes['w:firstLine'] !== '0');
+}
+
+function mathAlignment(paragraph) {
+  const mathPara = findChild(paragraph, 'm:oMathPara');
+  const mathParaPr = findChild(mathPara, 'm:oMathParaPr');
+  const jc = findChild(mathParaPr, 'm:jc');
+  return jc?.attributes?.['m:val'] || jc?.attributes?.['w:val'] || (mathPara ? 'left' : '');
+}
+
+function setMathParagraphAlignment(paragraph, alignment) {
+  const mathPara = findChild(paragraph, 'm:oMathPara');
+  if (!mathPara) return;
+  const mathParaPr = ensureChild(mathPara, 'm:oMathParaPr');
+  const jc = ensureChild(mathParaPr, 'm:jc');
+  jc.attributes = { 'm:val': alignment };
+}
+
+function hasEquationTabLayout(paragraph, equationRules) {
+  const tabs = findChildren(findChild(findChild(paragraph, 'w:pPr'), 'w:tabs'), 'w:tab');
+  const centerPos = String(equationRules.centerTabTwips || Math.round((equationRules.rightTabTwips || 9000) / 2));
+  const rightPos = String(equationRules.rightTabTwips || 9000);
+  const hasCenter = tabs.some((tab) => tab.attributes?.['w:val'] === 'center' && tab.attributes?.['w:pos'] === centerPos);
+  const hasRight = tabs.some((tab) => tab.attributes?.['w:val'] === 'right' && tab.attributes?.['w:pos'] === rightPos);
+  return hasCenter && hasRight && hasLeadingTabRun(paragraph);
+}
+
+function hasLeadingTabRun(paragraph) {
+  const content = (paragraph.elements || []).filter((element) => element.name !== 'w:pPr');
+  const first = content[0];
+  return first?.name === 'w:r' && Boolean(findChild(first, 'w:tab'));
+}
+
+function ensureEquationLeadingCenterTab(paragraph) {
+  paragraph.elements ||= [];
+  const pPr = findChild(paragraph, 'w:pPr');
+  const content = paragraph.elements.filter((element) => element !== pPr);
+  if (content[0]?.name === 'w:r' && findChild(content[0], 'w:tab')) return;
+  const tabRun = {
+    type: 'element',
+    name: 'w:r',
+    elements: [
+      { type: 'element', name: 'w:rPr', elements: [] },
+      { type: 'element', name: 'w:tab', elements: [] },
+    ],
+  };
+  paragraph.elements = [
+    ...(pPr ? [pPr] : []),
+    tabRun,
+    ...content,
+  ];
+}
+
 function setRunStyle(run, font, latinFont, size, bold) {
   const rPr = ensureChild(run, 'w:rPr');
-  const fonts = ensureChild(rPr, 'w:rFonts');
-  fonts.attributes = {
-    ...(fonts.attributes || {}),
-    'w:ascii': latinFont || font,
-    'w:hAnsi': latinFont || font,
-    'w:eastAsia': font,
-    'w:cs': latinFont || font,
-  };
-  const sz = ensureChild(rPr, 'w:sz');
-  sz.attributes = { 'w:val': String(size) };
-  const szCs = ensureChild(rPr, 'w:szCs');
-  szCs.attributes = { 'w:val': String(size) };
-  removeChildren(rPr, ['w:b']);
-  if (bold) rPr.elements.push({ type: 'element', name: 'w:b', elements: [] });
+  setRunProperties(rPr, font, latinFont, size, bold);
 }
 
 function setParagraphText(paragraph, text, font, latinFont, size, bold = false) {
@@ -1310,6 +1879,43 @@ function stripEquationNumber(paragraph) {
       }
     }
   });
+  pruneTrailingEquationNumberRuns(paragraph);
+}
+
+function pruneTrailingEquationNumberRuns(paragraph) {
+  const pPr = findChild(paragraph, 'w:pPr');
+  const content = (paragraph.elements || []).filter((element) => element !== pPr);
+  let lastMathIndex = -1;
+  for (let i = 0; i < content.length; i++) {
+    if (content[i].name === 'm:oMath' || content[i].name === 'm:oMathPara') lastMathIndex = i;
+  }
+  if (lastMathIndex < 0) return;
+
+  const trailing = content.slice(lastMathIndex + 1);
+  const trailingText = normalizeSpaces(trailing.map((element) => getParagraphText(element)).join('')).trim();
+  if (trailing.length && /^[（）()A-Z0-9.\-\s]*$/.test(trailingText || '')) {
+    paragraph.elements = [
+      ...(pPr ? [pPr] : []),
+      ...content.slice(0, lastMathIndex + 1),
+    ];
+    return;
+  }
+
+  const kept = [...content];
+  while (kept.length) {
+    const last = kept[kept.length - 1];
+    if (last.name !== 'w:r') break;
+    const text = normalizeSpaces(getParagraphText(last)).trim();
+    const hasOnlyTab = !text && Boolean(findChild(last, 'w:tab'));
+    const isEquationNumber = /^[（(]\s*[A-Z0-9]+[-.]\d+\s*[）)]$/.test(text);
+    const isEmptyRun = !text && !findChild(last, 'w:tab');
+    if (!hasOnlyTab && !isEquationNumber && !isEmptyRun) break;
+    kept.pop();
+  }
+  paragraph.elements = [
+    ...(pPr ? [pPr] : []),
+    ...kept,
+  ];
 }
 
 function appendEquationNumber(paragraph, number, rules) {
@@ -1331,6 +1937,53 @@ function appendEquationNumber(paragraph, number, rules) {
       { type: 'element', name: 'w:t', attributes: { 'xml:space': 'preserve' }, elements: [{ type: 'text', text: number }] },
     ],
   });
+}
+
+function setParagraphDefaultRunStyle(paragraph, font, latinFont, size, bold) {
+  const pPr = ensureChild(paragraph, 'w:pPr');
+  const rPr = ensureChild(pPr, 'w:rPr');
+  setRunProperties(rPr, font, latinFont, size, bold);
+}
+
+function setRunProperties(rPr, font, latinFont, size, bold) {
+  const fonts = ensureChild(rPr, 'w:rFonts');
+  const hint = fonts.attributes?.['w:hint'];
+  fonts.attributes = {
+    'w:ascii': latinFont || font,
+    'w:hAnsi': latinFont || font,
+    'w:eastAsia': font,
+    'w:cs': latinFont || font,
+    ...(hint ? { 'w:hint': hint } : {}),
+  };
+  const sz = ensureChild(rPr, 'w:sz');
+  sz.attributes = { 'w:val': String(size) };
+  const szCs = ensureChild(rPr, 'w:szCs');
+  szCs.attributes = { 'w:val': String(size) };
+  removeChildren(rPr, ['w:b', 'w:bCs']);
+  if (bold) {
+    rPr.elements.push({ type: 'element', name: 'w:b', elements: [] });
+    rPr.elements.push({ type: 'element', name: 'w:bCs', elements: [] });
+  }
+}
+
+function normalizeDocumentStyles(docx, rules) {
+  const stylesXml = docx.xmlFiles['word/styles.xml'];
+  const stylesRoot = findChild(stylesXml, 'w:styles');
+  if (!stylesRoot) return;
+
+  const docDefaults = ensureChild(stylesRoot, 'w:docDefaults');
+  const rPrDefault = ensureChild(ensureChild(docDefaults, 'w:rPrDefault'), 'w:rPr');
+  setRunProperties(rPrDefault, rules.body.eastAsiaFont, rules.body.latinFont, rules.body.fontSizeHalfPoints, false);
+
+  const pPrDefault = ensureChild(ensureChild(docDefaults, 'w:pPrDefault'), 'w:pPr');
+  const spacing = ensureChild(pPrDefault, 'w:spacing');
+  spacing.attributes = {
+    ...(spacing.attributes || {}),
+    'w:line': String(rules.body.lineTwips),
+    'w:lineRule': 'auto',
+  };
+  const jc = ensureChild(pPrDefault, 'w:jc');
+  jc.attributes = { 'w:val': rules.body.alignment };
 }
 
 function looksLikeTocLine(text) {
@@ -1362,6 +2015,33 @@ function tableCellsHaveParagraphAlignment(table, expectedAlignment) {
     }
   }
   return true;
+}
+
+function tableCellsHaveBodyStyle(table, rules) {
+  for (const row of findChildren(table, 'w:tr')) {
+    for (const cell of findChildren(row, 'w:tc')) {
+      for (const paragraph of findChildren(cell, 'w:p')) {
+        const text = getParagraphText(paragraph).trim();
+        if (!text) continue;
+        if (!paragraphHasStyle(paragraph, {
+          font: rules.bodyFont,
+          size: rules.bodyFontSizeHalfPoints,
+        })) return false;
+        if (!paragraphRunsMatchStyle(paragraph, {
+          font: rules.bodyFont,
+          size: rules.bodyFontSizeHalfPoints,
+        })) return false;
+      }
+    }
+  }
+  return true;
+}
+
+function tableHasRepeatHeaderRow(table) {
+  const firstRow = findChildren(table, 'w:tr')[0];
+  if (!firstRow) return true;
+  const trPr = findChild(firstRow, 'w:trPr');
+  return Boolean(findChild(trPr, 'w:tblHeader'));
 }
 
 function alignmentName(value) {
@@ -1398,6 +2078,31 @@ function applyThreeLineTable(table, cellAlignment = 'left') {
       }
     }
   });
+}
+
+function applyTableBodyStyle(table, rules) {
+  for (const row of findChildren(table, 'w:tr')) {
+    for (const cell of findChildren(row, 'w:tc')) {
+      for (const paragraph of findChildren(cell, 'w:p')) {
+        const text = getParagraphText(paragraph).trim();
+        if (!text) continue;
+        setParagraphDefaultRunStyle(paragraph, rules.bodyFont, rules.bodyLatinFont, rules.bodyFontSizeHalfPoints, false);
+        setParagraphProps(paragraph, { alignment: rules.cellAlignment || 'left' });
+        for (const run of findChildren(paragraph, 'w:r')) {
+          setRunStyle(run, rules.bodyFont, rules.bodyLatinFont, rules.bodyFontSizeHalfPoints, false);
+        }
+      }
+    }
+  }
+}
+
+function applyRepeatHeaderRow(table) {
+  const firstRow = findChildren(table, 'w:tr')[0];
+  if (!firstRow) return;
+  const trPr = ensureChild(firstRow, 'w:trPr');
+  if (!findChild(trPr, 'w:tblHeader')) {
+    trPr.elements.push({ type: 'element', name: 'w:tblHeader', elements: [] });
+  }
 }
 
 function border(name, value, size) {
