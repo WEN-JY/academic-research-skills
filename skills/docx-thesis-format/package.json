@@ -1,0 +1,7 @@
+{
+  "name": "docx-thesis-format",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Detect and fix Zhejiang University Engineering College thesis formatting in existing docx files."
+}

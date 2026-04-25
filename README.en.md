@@ -42,17 +42,39 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
   - `word-flowchart`: turn research workflows, technical routes, and decision branches into Word-style flowcharts
   - `cites-review`: check reference formatting, verify in-text citation numbers, and organize CNKI references
   - `html-slide`: build HTML slides for thesis defense, progress reports, and project presentations
+  - `literature-review`: expand literature review sections with recent references and numbered citations
   - `markdown-to-word`: convert Markdown paper drafts into editable Word documents
+  - `docx-thesis-format`: inspect and repair existing thesis `.docx` files and output a fixed document plus reports
 - Example:
   - “Use word-flowchart to convert the following research workflow into a Word-style flowchart and output DOT + image.”
   - “Use cites-review to check whether these references follow GB/T 7714-2015.”
   - “Use html-slide to generate one HTML defense slide for research background and contributions.”
+  - “Use literature-review to expand a recent project risk management review section and output GB/T 7714-2015 references.”
   - “Use markdown-to-word to convert this Markdown chapter draft into a Word document.”
+  - “Use docx-thesis-format to check and repair this thesis `.docx`, then output the formatted file and report.”
+
+## markdown-to-word Highlights
+
+`markdown-to-word` now covers FangSong body text, 0 pt spacing before/after, 1.5 line spacing, normalized section/subsection spacing, chapter-based figure/table captions, chapter-based display-equation numbering, and three-line tables with left-aligned cell content.
+
+## docx-thesis-format Highlights
+
+`docx-thesis-format` works on existing `.docx` thesis files through deterministic Node.js + OOXML processing. The current rule set includes:
+
+- page size, section margins, document grid, Roman-numbered front matter, and body page numbering
+- TOC field and TOC-order checks
+- header/footer checks, including a justified header with a fixed left thesis label and a right-aligned current section title
+- body paragraphs, heading spacing, chapter-based display-equation numbering
+- chapter-based figure/table caption numbering
+- three-line-table borders and left-aligned table-cell content
+- reference numbering and type-marker checks
 
 ## Docs
 
 - `docs/README.md` (Chinese)
 - `docs/README.en.md` (English)
+- `docs/skills/docx-thesis-format-review.md` (Chinese)
+- `docs/skills/docx-thesis-format-extracted-rules.md` (Chinese)
 - `docs/skills/markdown-to-word.md` (Chinese)
 - `docs/skills/markdown-to-word.en.md` (English)
 - `docs/skills/word-flowchart.md` (Chinese)
