@@ -149,8 +149,10 @@ const markdown = fixChinesePunctuation(ensureParagraphBreaks(preprocessTabTables
 // 通过 eastAsia 设多候选，name 设 ascii/hAnsi 字体
 const FONT_CN = '仿宋';              // eastAsia 字体
 const FONT_EN = 'Times New Roman';  // ascii / hAnsi
+const FONT_SPACE_CN = '宋体';
 // docx 包要求用 { ascii, eastAsia, hAnsi, cs }，不能用 { name, eastAsia }
 const FONT_BODY = { ascii: FONT_EN, eastAsia: FONT_CN, hAnsi: FONT_CN, cs: FONT_EN };
+const FONT_SPACE = { ascii: FONT_SPACE_CN, eastAsia: FONT_SPACE_CN, hAnsi: FONT_SPACE_CN, cs: FONT_SPACE_CN };
 const FONT_SIZE = 24;               // 小四 = 12pt = 24 half-points
 const FONT_SIZE_H1 = 30;            // 小三 = 15pt
 const FONT_SIZE_H2 = 28;            // 四号 = 14pt
@@ -245,6 +247,78 @@ function headingRun(level, opts = {}) {
   const size = level === 1 ? FONT_SIZE_H1 : level === 2 ? FONT_SIZE_H2 : FONT_SIZE_H3;
   const bold = level <= 2; // H1, H2 加黑; H3 不加黑
   return { font: fontOverride || FONT_BODY, size, bold, ...rest };
+}
+
+function extractPlainInlineText(children) {
+  if (!children || children.length === 0) return '';
+  let text = '';
+  for (const tok of children) {
+    if (tok.type === 'text') text += tok.content;
+    else if (tok.type === 'softbreak' || tok.type === 'hardbreak') text += ' ';
+    else return null;
+  }
+  return text;
+}
+
+function buildStructuredHeadingRuns(level, children) {
+  const text = extractPlainInlineText(children);
+  if (!text) return null;
+  if (level === 2) {
+    const match = text.trim().match(/^(\d+\.\d+)\s+(.+)$/);
+    if (!match) return null;
+    return [
+      new TextRun(headingRun(level, { text: match[1] })),
+      new TextRun(headingRun(level, { text: '  ', font: FONT_SPACE })),
+      new TextRun(headingRun(level, { text: match[2].trim() })),
+    ];
+  }
+  if (level === 3) {
+    const match = text.trim().match(/^(\d+\.\d+\.\d+)\s+(.+)$/);
+    if (!match) return null;
+    return [
+      new TextRun(headingRun(level, { text: match[1] })),
+      new TextRun(headingRun(level, { text: ' ', font: FONT_SPACE })),
+      new TextRun(headingRun(level, { text: match[2].trim() })),
+    ];
+  }
+  return null;
+}
+
+function parseChapterNumberFromTitle(text) {
+  const match = text.trim().match(/^第\s*([0-9一二三四五六七八九十]+)\s*章/);
+  if (!match) return 0;
+  const value = match[1];
+  if (/^\d+$/.test(value)) return Number(value);
+  const digits = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+  if (value === '十') return 10;
+  if (value.startsWith('十')) return 10 + (digits[value[1]] || 0);
+  if (value.includes('十')) {
+    const [tens, ones] = value.split('十');
+    return (digits[tens] || 1) * 10 + (digits[ones] || 0);
+  }
+  return digits[value] || 0;
+}
+
+function normalizeCaptionTitle(text, kind) {
+  const rest = text.replace(new RegExp(`^${kind}\\s*`), '').trim();
+  const firstWhitespace = rest.search(/\s/);
+  if (firstWhitespace === -1) return rest;
+  return rest.slice(firstWhitespace).trim();
+}
+
+function formatEquationNumber(chapter, index) {
+  if (!chapter || !index) return '';
+  return `（${chapter}-${index}）`;
+}
+
+function buildCaptionRuns(kind, chapter, index, children, runFn) {
+  const text = extractPlainInlineText(children);
+  if (!text) return null;
+  if (!chapter) return null;
+  const title = normalizeCaptionTitle(text, kind);
+  const prefix = `${kind}${chapter}.${index}`;
+  const body = title ? `${prefix} ${title}` : prefix;
+  return wrapLinks(parseInline([{ type: 'text', content: body }], {}, runFn));
 }
 
 // ── Table run style ──
@@ -422,6 +496,10 @@ function convertTokens(tokens) {
   let listLevel = 0;
   const listTypes = [];
   let inBlockquote = false;
+  let currentChapter = 0;
+  let figureIndex = 0;
+  let tableIndex = 0;
+  let equationIndex = 0;
 
   while (i < tokens.length) {
     const tok = tokens[i];
@@ -432,9 +510,21 @@ function convertTokens(tokens) {
         const inline = tokens[++i];
         i += 2;
         const hRunFn = (opts) => headingRun(level, opts);
+        const headingText = extractPlainInlineText(inline.children)?.trim() || '';
+        if (level === 1) {
+          const parsedChapter = parseChapterNumberFromTitle(headingText);
+          if (parsedChapter > 0) {
+            currentChapter = parsedChapter;
+            figureIndex = 0;
+            tableIndex = 0;
+            equationIndex = 0;
+          }
+        }
+        const headingChildren = buildStructuredHeadingRuns(level, inline.children)
+          || wrapLinks(parseInline(inline.children, {}, hRunFn));
         elements.push(new Paragraph({
           heading: HEADING[level],
-          children: wrapLinks(parseInline(inline.children, {}, hRunFn)),
+          children: headingChildren,
           spacing: { before: level <= 2 ? 360 : 240, after: 120, line: LINE_SPACING },
           alignment: level === 1 ? AlignmentType.CENTER : AlignmentType.LEFT,
         }));
@@ -444,10 +534,21 @@ function convertTokens(tokens) {
       case 'paragraph_open': {
         const inline = tokens[++i];
         i += 2;
+        const plainText = extractPlainInlineText(inline.children)?.trim() || '';
+        const isFigureCaption = /^图\s*/.test(plainText);
+        const isTableCaption = /^表\s*/.test(plainText);
+        if (isFigureCaption && currentChapter > 0) figureIndex++;
+        if (isTableCaption && currentChapter > 0) tableIndex++;
+        const captionRunFn = (opts) => defaultRun(opts);
+        const captionChildren = isFigureCaption
+          ? buildCaptionRuns('图', currentChapter, figureIndex, inline.children, captionRunFn)
+          : isTableCaption
+            ? buildCaptionRuns('表', currentChapter, tableIndex, inline.children, captionRunFn)
+            : null;
         const opts = {
-          children: wrapLinks(parseInline(inline.children)),
+          children: captionChildren || wrapLinks(parseInline(inline.children)),
           spacing: { before: 0, after: 0, line: LINE_SPACING },
-          alignment: AlignmentType.JUSTIFIED,
+          alignment: (isFigureCaption || isTableCaption) ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
         };
         if (inBlockquote) {
           opts.indent = { left: convertInchesToTwip(0.4), firstLine: INDENT_2CHAR };
@@ -457,6 +558,8 @@ function convertTokens(tokens) {
             reference: listTypes[listTypes.length - 1] === 'ordered' ? 'ordered-list' : 'bullet-list',
             level: listLevel - 1,
           };
+        } else if (isFigureCaption || isTableCaption) {
+          opts.indent = { firstLine: 0 };
         } else {
           // Normal paragraph: 首行缩进2字符
           opts.indent = { firstLine: INDENT_2CHAR };
@@ -466,12 +569,54 @@ function convertTokens(tokens) {
       }
 
       case 'math_block': {
-        // Display math: centered paragraph with Math object
-        elements.push(new Paragraph({
+        equationIndex++;
+        const equationNumber = formatEquationNumber(currentChapter, equationIndex);
+        const BORDER_NONE = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+        const equationParagraph = new Paragraph({
           alignment: AlignmentType.CENTER,
           children: [new DocxMath({ children: latexToMathChildren(tok.content) })],
           spacing: { before: 120, after: 120, line: LINE_SPACING },
-        }));
+        });
+        if (equationNumber) {
+          elements.push(new Table({
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({ text: '' })],
+                    borders: { top: BORDER_NONE, bottom: BORDER_NONE, left: BORDER_NONE, right: BORDER_NONE },
+                  }),
+                  new TableCell({
+                    width: { size: 70, type: WidthType.PERCENTAGE },
+                    children: [equationParagraph],
+                    borders: { top: BORDER_NONE, bottom: BORDER_NONE, left: BORDER_NONE, right: BORDER_NONE },
+                  }),
+                  new TableCell({
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({
+                      alignment: AlignmentType.RIGHT,
+                      spacing: { before: 120, after: 120, line: LINE_SPACING },
+                      children: [new TextRun(defaultRun({ text: equationNumber }))],
+                    })],
+                    borders: { top: BORDER_NONE, bottom: BORDER_NONE, left: BORDER_NONE, right: BORDER_NONE },
+                  }),
+                ],
+              }),
+            ],
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: BORDER_NONE,
+              bottom: BORDER_NONE,
+              left: BORDER_NONE,
+              right: BORDER_NONE,
+              insideHorizontal: BORDER_NONE,
+              insideVertical: BORDER_NONE,
+            },
+          }));
+        } else {
+          elements.push(equationParagraph);
+        }
         i++;
         break;
       }

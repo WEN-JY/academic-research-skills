@@ -68,19 +68,27 @@ input.md
 
 - Body text uses 仿宋 for East Asian text and `Times New Roman` for Latin text
 - Normal paragraphs use 2-character first-line indent
-- Body paragraphs use justified alignment and 1.5 line spacing
+- Body paragraphs use justified alignment, 1.5 line spacing, and 0 pt spacing before/after
+- Level-2 headings are normalized to `2.1  标题` with two 宋体 spaces after the number
+- Level-3 headings are normalized to `2.1.1 标题` with one 宋体 space after the number
+- Figure captions are normalized to `图1.1 图题` and increase within each chapter
+- Table captions are normalized to `表1.1 表题` and increase within each chapter
 - Heading 1 is centered; heading 2 and heading 3 are left aligned
 
 ### 3. Table Rendering
 
 - Markdown tables are converted to three-line tables
+- Table-cell content is left aligned by default
 - Vertical borders are removed by default
 - Header row and bottom rule are emphasized to fit thesis-style tables
+- Table captions are centered and renumbered by chapter when written as caption paragraphs
 
 ### 4. Formula Rendering
 
 - Supports inline math `$...$`
 - Supports display math `$$...$$`
+- Display equations are numbered by chapter as `（1-1）`, `（1-2）`
+- The formula body is centered and the equation number is right aligned
 - Converts LaTeX expressions into docx math objects through `latex2math.mjs`
 
 ### 5. Citation Superscript Rendering
