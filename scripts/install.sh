@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_URL="https://raw.githubusercontent.com/WEN-JY/academic-research-skills/main/scripts/install_and_update.py"
+SCRIPT_URL="https://raw.githubusercontent.com/WEN-JY/academic-research-skills/main/scripts/install_and_update.sh"
 
 SCRIPT_DIR=""
 case "$0" in
@@ -11,17 +11,12 @@ case "$0" in
 esac
 
 LOCAL_SCRIPT=""
-if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/install_and_update.py" ]; then
-  LOCAL_SCRIPT="$SCRIPT_DIR/install_and_update.py"
-fi
-
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "error: python3 is required to run the installer." >&2
-  exit 1
+if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/install_and_update.sh" ]; then
+  LOCAL_SCRIPT="$SCRIPT_DIR/install_and_update.sh"
 fi
 
 if [ -n "$LOCAL_SCRIPT" ]; then
-  python3 "$LOCAL_SCRIPT" "$@"
+  sh "$LOCAL_SCRIPT" "$@"
   exit $?
 fi
 
@@ -34,11 +29,11 @@ else
   exit 1
 fi
 
-TMP_FILE="$(mktemp -t academic-research-skills.XXXXXX.py)"
+TMP_FILE="$(mktemp -t academic-research-skills.XXXXXX.sh)"
 cleanup() {
   rm -f "$TMP_FILE"
 }
 trap cleanup EXIT INT TERM
 
 sh -c "$FETCH_CMD \"$SCRIPT_URL\" > \"$TMP_FILE\""
-python3 "$TMP_FILE" "$@"
+sh "$TMP_FILE" "$@"

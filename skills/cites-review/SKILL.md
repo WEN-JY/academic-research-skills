@@ -1,6 +1,7 @@
 ---
 name: cites-review
 description: "Review, organize, and format academic references and citations following GB/T 7714-2015 and other standards. This skill should be used when users need to: (1) Check and fix reference formatting errors, (2) Standardize citation styles, (3) Extract references from CNKI (知网) using browser scripts or Playwright automation, (4) Cross-check in-text citation numbers against the reference list, (5) Reorganize and renumber references after document restructuring."
+description_zh: 审查、整理并规范参考文献与正文引用，适用于 GB/T 7714-2015 校验、知网文献提取、引文核对与重编号。
 ---
 
 # Citation & Reference Review

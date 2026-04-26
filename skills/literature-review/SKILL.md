@@ -1,6 +1,7 @@
 ---
 name: literature-review
 description: "Search and synthesize high-quality literature for a research topic, expand literature review sections, and output citation-ordered references in GB/T 7714-2015 style. Use this skill when users need to: (1) retrieve recent high-quality papers around a theme, (2) supplement or rewrite a literature review based on an outline or draft, (3) merge new citations into an existing numbered reference list, (4) produce Markdown that stays compatible with cites-review and markdown-to-word."
+description_zh: 结合研究主题、提纲或草稿检索近年高质量文献，补写文献综述，并生成按正文顺序编号的 GB/T 7714-2015 参考文献。
 ---
 
 # Literature Review Expansion

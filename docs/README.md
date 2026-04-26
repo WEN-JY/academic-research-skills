@@ -15,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 本地仓库安装：
 
 ```bash
-python3 scripts/install_and_update.py --source-root .
+sh scripts/install_and_update.sh --source-root .
 ```
 
 默认安装位置为 `$CODEX_HOME/skills` 或 `~/.codex/skills`。安装脚本默认使用软链接；如果希望复制安装，可追加 `--mode copy`。
@@ -31,12 +31,12 @@ python3 scripts/install_and_update.py --source-root .
 ## 技能列表
 
 <!-- SKILLS:START -->
-- `word-flowchart` - 使用 Graphviz DOT 绘制 Word 风格流程图，强调黑白样式、正交连线与严格对齐，适合研究技术路线与复杂流程整理。
 - `cites-review` - 审查、整理并规范参考文献与正文引用，适用于 GB/T 7714-2015 校验、知网文献提取、引文核对与重编号。
+- `docx-thesis-format` - 对现有 `.docx` 学位论文进行格式检测与自动修复，输出修复后的文档、Markdown 报告与 JSON 报告。
 - `html-slide` - 生成学术答辩与汇报场景的 HTML 幻灯片，提供统一视觉风格、图文布局、表格与公式展示组件。
 - `literature-review` - 结合研究主题、提纲或草稿检索近年高质量文献，补写文献综述，并生成按正文顺序编号的 GB/T 7714-2015 参考文献。
 - `markdown-to-word` - 将 Markdown 学术文稿转换为 Word 文档，支持公式、表格与图片，默认对齐浙江大学工程管理硕士学位论文常用正文格式。
-- `docx-thesis-format` - 对现有 `.docx` 学位论文进行格式检测与自动修复，输出修复后的文档、Markdown 报告与 JSON 报告。
+- `word-flowchart` - 使用 Graphviz DOT 绘制 Word 风格流程图，强调黑白样式、正交连线与严格对齐，适合研究技术路线与复杂流程整理。
 <!-- SKILLS:END -->
 
 ## 能力边界摘要
@@ -71,7 +71,7 @@ python3 scripts/install_and_update.py --source-root .
 如果新增或删除了 skill，请运行：
 
 ```bash
-python3 scripts/install_and_update.py --docs-only --source-root .
+sh scripts/install_and_update.sh --docs-only --source-root .
 ```
 
 这会自动更新本页和根目录 `README.md` 中 `SKILLS` 标记块内的技能列表。

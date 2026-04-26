@@ -1,5 +1,4 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![GitHub Stars](https://img.shields.io/github/stars/WEN-JY/academic-research-skills?style=social)](https://github.com/WEN-JY/academic-research-skills)
 [![GitHub Forks](https://img.shields.io/github/forks/WEN-JY/academic-research-skills?style=social)](https://github.com/WEN-JY/academic-research-skills)
 [![GitHub Issues](https://img.shields.io/github/issues/WEN-JY/academic-research-skills)](https://github.com/WEN-JY/academic-research-skills/issues)
@@ -25,12 +24,12 @@
 ## 当前技能
 
 <!-- SKILLS:START -->
-- `word-flowchart` - 使用 Graphviz DOT 绘制 Word 风格流程图，强调黑白样式、正交连线与严格对齐，适合研究技术路线与复杂流程整理。
 - `cites-review` - 审查、整理并规范参考文献与正文引用，适用于 GB/T 7714-2015 校验、知网文献提取、引文核对与重编号。
+- `docx-thesis-format` - 对现有 `.docx` 学位论文进行格式检测与自动修复，输出修复后的文档、Markdown 报告与 JSON 报告。
 - `html-slide` - 生成学术答辩与汇报场景的 HTML 幻灯片，提供统一视觉风格、图文布局、表格与公式展示组件。
 - `literature-review` - 结合研究主题、提纲或草稿检索近年高质量文献，补写文献综述，并生成按正文顺序编号的 GB/T 7714-2015 参考文献。
 - `markdown-to-word` - 将 Markdown 学术文稿转换为 Word 文档，支持公式、表格与图片，默认对齐浙江大学工程管理硕士学位论文常用正文格式。
-- `docx-thesis-format` - 对现有 `.docx` 学位论文进行格式检测与自动修复，输出修复后的文档、Markdown 报告与 JSON 报告。
+- `word-flowchart` - 使用 Graphviz DOT 绘制 Word 风格流程图，强调黑白样式、正交连线与严格对齐，适合研究技术路线与复杂流程整理。
 <!-- SKILLS:END -->
 
 ## 技能速览
@@ -56,8 +55,8 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 
 安装脚本要求：
 
-- 需要 `python3`
 - 需要 `curl` 或 `wget`
+- 需要 POSIX `sh`
 - 默认安装到 `$CODEX_HOME/skills` 或 `~/.codex/skills`
 - 默认使用软链接安装，便于后续同步更新
 - 远程执行时会先缓存仓库快照到 `~/.codex/.cache/academic-research-skills/repo`
@@ -84,27 +83,26 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 适合已经克隆本仓库、希望从本地目录安装或维护文档的人。
 
 ```bash
-python3 scripts/install_and_update.py
+sh scripts/install_and_update.sh
 ```
 
 常见用法：
 
 ```bash
 # 安装到自定义目录
-python3 scripts/install_and_update.py --dest ~/.codex/skills
+sh scripts/install_and_update.sh --dest ~/.codex/skills
 
 # 只刷新 README 中的 skill 列表
-python3 scripts/install_and_update.py --docs-only --source-root .
+sh scripts/install_and_update.sh --docs-only --source-root .
 
 # 从当前仓库复制安装
-python3 scripts/install_and_update.py --mode copy --source-root .
+sh scripts/install_and_update.sh --mode copy --source-root .
 ```
 
 ### 运行依赖建议
 
 不同 skill 的本地依赖不同，建议按需准备：
 
-- `python3`：安装脚本必需
 - `Node.js`：`markdown-to-word`、`docx-thesis-format`、`html-slide` 需要
 - `Graphviz`：`word-flowchart` 在需要输出图片时建议安装 `dot` 或 `neato`
 - 浏览器 / Office：用于人工预览导出的 HTML、DOCX 或截图结果
@@ -212,7 +210,7 @@ academic-research-skills/
 │   └── docx-thesis-format/
 ├── docs/                           # 补充文档与技能说明
 ├── scripts/install.sh              # 远程安装入口
-├── scripts/install_and_update.py   # 本地安装与 README 列表更新
+├── scripts/install_and_update.sh   # 本地安装与 README 列表更新
 ├── README.md
 └── README.en.md
 ```
@@ -227,7 +225,7 @@ academic-research-skills/
 4. 运行下面的命令刷新 README 中的 skill 列表：
 
 ```bash
-python3 scripts/install_and_update.py --docs-only --source-root .
+sh scripts/install_and_update.sh --docs-only --source-root .
 ```
 
 ## 文档入口
@@ -244,4 +242,4 @@ python3 scripts/install_and_update.py --docs-only --source-root .
 
 ## 说明
 
-README 中 `<!-- SKILLS:START -->` 到 `<!-- SKILLS:END -->` 之间的 skill 列表会被 `scripts/install_and_update.py` 自动更新。若只想手工改写其他段落，请尽量保留这两个标记。
+README 中 `<!-- SKILLS:START -->` 到 `<!-- SKILLS:END -->` 之间的 skill 列表会被 `scripts/install_and_update.sh` 自动更新。若只想手工改写其他段落，请尽量保留这两个标记。
