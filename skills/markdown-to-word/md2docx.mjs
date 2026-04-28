@@ -150,6 +150,7 @@ const markdown = fixChinesePunctuation(ensureParagraphBreaks(preprocessTabTables
 const FONT_CN = '仿宋';              // eastAsia 字体
 const FONT_EN = 'Times New Roman';  // ascii / hAnsi
 const FONT_SPACE_CN = '宋体';
+const FONT_BODY_EN = { ascii: FONT_EN, eastAsia: FONT_EN, hAnsi: FONT_EN, cs: FONT_EN };
 // docx 包要求用 { ascii, eastAsia, hAnsi, cs }，不能用 { name, eastAsia }
 const FONT_BODY = { ascii: FONT_EN, eastAsia: FONT_CN, hAnsi: FONT_CN, cs: FONT_EN };
 const FONT_SPACE = { ascii: FONT_SPACE_CN, eastAsia: FONT_SPACE_CN, hAnsi: FONT_SPACE_CN, cs: FONT_SPACE_CN };
@@ -157,11 +158,24 @@ const FONT_SIZE = 24;               // 小四 = 12pt = 24 half-points
 const FONT_SIZE_H1 = 30;            // 小三 = 15pt
 const FONT_SIZE_H2 = 28;            // 四号 = 14pt
 const FONT_SIZE_H3 = 24;            // 小四 = 12pt
+const FONT_SIZE_CAPTION = 21;       // 五号 = 10.5pt
 const FONT_SIZE_TABLE = 21;         // 五号 = 10.5pt
 const LINE_SPACING = 360;           // 1.5倍行距 (240 * 1.5)
 const LINE_SPACING_SINGLE = 240;    // 单倍行距
 const INDENT_2CHAR = 480;           // 首行缩进2字符 (12pt × 2 = 24pt = 480 twips)
 const FONT_MONO = 'Courier New';
+const PAGE_SIZE = { width: 11907, height: 16840 };
+const PAGE_MARGIN = {
+  top: 1440,
+  right: 1797,
+  bottom: 1440,
+  left: 1797,
+  header: 720,
+  footer: 720,
+  gutter: 0,
+};
+const REFERENCE_ENTRY_NUMBER_RE = /^\s*(?:\[(\d+)\]|(\d+)[\.\)])\s*/u;
+const REFERENCE_TYPE_RE = /\[(M|C|N|J|D|R|S|P|A|DB|CP|EB\/OL|DB\/OL)\]/;
 
 // ── markdown-it with math plugin ──
 const md = new MarkdownIt({ html: false, typographer: false });
@@ -245,8 +259,30 @@ function defaultRun(opts = {}) {
 function headingRun(level, opts = {}) {
   const { font: fontOverride, ...rest } = opts;
   const size = level === 1 ? FONT_SIZE_H1 : level === 2 ? FONT_SIZE_H2 : FONT_SIZE_H3;
-  const bold = level <= 2; // H1, H2 加黑; H3 不加黑
-  return { font: fontOverride || FONT_BODY, size, bold, boldComplexScript: bold, ...rest };
+  const defaultBold = level <= 2; // H1, H2 加黑; H3 不加黑
+  const resolvedBold = rest.bold ?? defaultBold;
+  return {
+    font: fontOverride || FONT_BODY,
+    size,
+    ...rest,
+    bold: resolvedBold,
+    boldComplexScript: rest.boldComplexScript ?? resolvedBold,
+  };
+}
+
+function captionRun(opts = {}) {
+  const { font: fontOverride, ...rest } = opts;
+  return { font: fontOverride || FONT_BODY, size: FONT_SIZE_CAPTION, ...rest };
+}
+
+function captionEnglishRun(opts = {}) {
+  const { font: fontOverride, ...rest } = opts;
+  return { font: fontOverride || FONT_BODY_EN, size: FONT_SIZE_CAPTION, ...rest };
+}
+
+function referenceRun(opts = {}) {
+  const { font: fontOverride, ...rest } = opts;
+  return { font: fontOverride || FONT_BODY, size: FONT_SIZE, ...rest };
 }
 
 function extractPlainInlineText(children) {
@@ -306,9 +342,19 @@ function normalizeCaptionTitle(text, kind) {
   return rest.slice(firstWhitespace).trim();
 }
 
+function normalizeEnglishCaptionTitle(text, kind) {
+  const rest = text.replace(new RegExp(`^${kind}\\s*`, 'i'), '').trim();
+  const withoutNumber = rest.replace(/^\d+(?:\.\d+)*\s*/, '').trim();
+  return withoutNumber;
+}
+
 function formatEquationNumber(chapter, index) {
   if (!chapter || !index) return '';
   return `（${chapter}-${index}）`;
+}
+
+function isReferenceHeadingText(text) {
+  return text.replace(/\s+/g, '') === '参考文献';
 }
 
 function buildCaptionRuns(kind, chapter, index, children, runFn) {
@@ -319,6 +365,24 @@ function buildCaptionRuns(kind, chapter, index, children, runFn) {
   const prefix = `${kind}${chapter}.${index}`;
   const body = title ? `${prefix} ${title}` : prefix;
   return wrapLinks(parseInline([{ type: 'text', content: body }], {}, runFn));
+}
+
+function buildEnglishCaptionRuns(kind, chapter, index, children, runFn) {
+  const text = extractPlainInlineText(children);
+  if (!text || !chapter) return null;
+  const prefixKind = kind === '图' ? 'Figure' : 'Table';
+  const title = normalizeEnglishCaptionTitle(text, prefixKind);
+  const prefix = `${prefixKind} ${chapter}.${index}`;
+  const body = title ? `${prefix} ${title}` : prefix;
+  return wrapLinks(parseInline([{ type: 'text', content: body }], {}, runFn));
+}
+
+function isEnglishCaptionText(text, kind) {
+  if (!text) return false;
+  const normalized = text.trim();
+  if (kind === '图') return /^Figure\b/i.test(normalized);
+  if (kind === '表') return /^Table\b/i.test(normalized);
+  return false;
 }
 
 // ── Table run style ──
@@ -389,30 +453,224 @@ function normalizeCitationLabel(label) {
     .trim();
 }
 
-function appendTextRunsWithCitations(runs, text, bold, italic, runFn) {
+function parseCitationNumbers(label) {
+  const normalized = normalizeCitationLabel(label);
+  if (!normalized) return [];
+  const numbers = [];
+  for (const part of normalized.split(',').map((item) => item.trim()).filter(Boolean)) {
+    const rangeMatch = part.match(/^(\d+)-(\d+)$/);
+    if (rangeMatch) {
+      const start = Number(rangeMatch[1]);
+      const end = Number(rangeMatch[2]);
+      if (start <= end) {
+        for (let n = start; n <= end; n++) numbers.push(n);
+      } else {
+        for (let n = start; n >= end; n--) numbers.push(n);
+      }
+      continue;
+    }
+    if (/^\d+$/.test(part)) numbers.push(Number(part));
+  }
+  return numbers;
+}
+
+function formatCitationNumbers(numbers) {
+  if (!numbers || numbers.length === 0) return '';
+  const uniqueSorted = [...new Set(numbers)].sort((a, b) => a - b);
+  const parts = [];
+  let start = uniqueSorted[0];
+  let prev = uniqueSorted[0];
+  for (let i = 1; i < uniqueSorted.length; i++) {
+    const current = uniqueSorted[i];
+    if (current === prev + 1) {
+      prev = current;
+      continue;
+    }
+    parts.push(start === prev ? `${start}` : `${start}-${prev}`);
+    start = current;
+    prev = current;
+  }
+  parts.push(start === prev ? `${start}` : `${start}-${prev}`);
+  return parts.join(',');
+}
+
+function buildCitationLabel(label, citationState) {
+  const numbers = parseCitationNumbers(label);
+  if (numbers.length === 0) return normalizeCitationLabel(label);
+  const mapped = numbers.map((number) => {
+    if (!citationState?.shouldRenumberCitations) return number;
+    return citationState.citationNumberMap.get(number) || number;
+  });
+  return formatCitationNumbers(mapped);
+}
+
+function collectCitationsFromText(text, seen, ordered) {
+  for (const match of text.matchAll(CITE_SUPERSCRIPT_RE)) {
+    for (const number of parseCitationNumbers(match[1])) {
+      if (!seen.has(number)) {
+        seen.add(number);
+        ordered.push(number);
+      }
+    }
+  }
+}
+
+function appendTextRunsWithCitations(runs, text, bold, italic, runFn, citationState) {
   let lastIndex = 0;
   for (const match of text.matchAll(CITE_SUPERSCRIPT_RE)) {
     const index = match.index ?? 0;
     if (index > lastIndex) {
-      runs.push(new TextRun(runFn({ text: text.slice(lastIndex, index), bold, italics: italic })));
+      runs.push(new TextRun(runFn({
+        text: text.slice(lastIndex, index),
+        ...buildInlineTextStyle({ bold, italics: italic }),
+      })));
     }
-    const normalized = normalizeCitationLabel(match[1]);
+    const normalized = buildCitationLabel(match[1], citationState);
     runs.push(new TextRun(runFn({
       text: `[${normalized}]`,
-      bold,
-      italics: italic,
+      ...buildInlineTextStyle({ bold, italics: italic }),
       superScript: true,
     })));
     lastIndex = index + match[0].length;
   }
   if (lastIndex < text.length) {
-    runs.push(new TextRun(runFn({ text: text.slice(lastIndex), bold, italics: italic })));
+    runs.push(new TextRun(runFn({
+      text: text.slice(lastIndex),
+      ...buildInlineTextStyle({ bold, italics: italic }),
+    })));
   }
+}
+
+function stripLeadingReferenceNumber(children) {
+  if (!children || children.length === 0) return [];
+  let firstTextSeen = false;
+  return children.flatMap((child) => {
+    if (child.type !== 'text' || firstTextSeen) return [{ ...child }];
+    firstTextSeen = true;
+    const stripped = child.content.replace(REFERENCE_ENTRY_NUMBER_RE, '');
+    if (!stripped) return [];
+    return [{ ...child, content: stripped }];
+  });
+}
+
+function buildReferenceEntry(children, fallbackIndex) {
+  const plainText = extractPlainInlineText(children)?.trim() || '';
+  if (!plainText) return null;
+  const match = plainText.match(REFERENCE_ENTRY_NUMBER_RE);
+  const sourceNumber = match ? Number(match[1] || match[2]) : fallbackIndex;
+  const normalizedText = match ? plainText.slice(match[0].length).trim() : plainText;
+  return {
+    entryId: fallbackIndex,
+    sourceNumber,
+    plainText: normalizedText,
+    children: match ? stripLeadingReferenceNumber(children) : children.map((child) => ({ ...child })),
+    hasTypeLabel: REFERENCE_TYPE_RE.test(normalizedText),
+  };
+}
+
+function analyzeDocument(tokens) {
+  const citationSeen = new Set();
+  const citationOrder = [];
+  const referenceEntries = [];
+  const warnings = [];
+  let inReferences = false;
+  let referenceHeadingLevel = 0;
+  let referenceEntryIndex = 0;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (tok.type === 'heading_open') {
+      const level = parseInt(tok.tag[1], 10);
+      const inline = tokens[i + 1];
+      const headingText = extractPlainInlineText(inline?.children)?.trim() || '';
+      if (inReferences && level <= referenceHeadingLevel && !isReferenceHeadingText(headingText)) {
+        inReferences = false;
+        referenceHeadingLevel = 0;
+      }
+      if (isReferenceHeadingText(headingText)) {
+        inReferences = true;
+        referenceHeadingLevel = level;
+      }
+      i += 2;
+      continue;
+    }
+    if (inReferences && tok.type === 'paragraph_open') {
+      const inline = tokens[i + 1];
+      const entry = buildReferenceEntry(inline?.children, ++referenceEntryIndex);
+      if (entry) referenceEntries.push(entry);
+      i += 2;
+      continue;
+    }
+    if (!inReferences && tok.type === 'inline') {
+      for (const child of tok.children || []) {
+        if (child.type === 'text') collectCitationsFromText(child.content, citationSeen, citationOrder);
+      }
+    }
+  }
+
+  const referencesByNumber = new Map();
+  for (const entry of referenceEntries) {
+    if (!entry.hasTypeLabel) {
+      warnings.push(`参考文献 [${entry.sourceNumber}] 缺少类型标识。`);
+    }
+    if (!referencesByNumber.has(entry.sourceNumber)) {
+      referencesByNumber.set(entry.sourceNumber, entry);
+    } else {
+      warnings.push(`参考文献编号重复：[${entry.sourceNumber}]。`);
+    }
+  }
+
+  const orderedReferenceEntries = [];
+  const appendedEntryIds = new Set();
+  for (const sourceNumber of citationOrder) {
+    const entry = referencesByNumber.get(sourceNumber);
+    if (!entry) {
+      warnings.push(`正文引用 [${sourceNumber}] 在参考文献列表中不存在。`);
+      continue;
+    }
+    if (!appendedEntryIds.has(entry.entryId)) {
+      orderedReferenceEntries.push(entry);
+      appendedEntryIds.add(entry.entryId);
+    }
+  }
+  for (const entry of referenceEntries) {
+    if (!appendedEntryIds.has(entry.entryId)) {
+      orderedReferenceEntries.push(entry);
+      appendedEntryIds.add(entry.entryId);
+      warnings.push(`参考文献 [${entry.sourceNumber}] 未在正文中引用，已排到已引用条目之后。`);
+    }
+  }
+
+  const citationNumberMap = new Map();
+  orderedReferenceEntries.forEach((entry, index) => {
+    if (!citationNumberMap.has(entry.sourceNumber)) {
+      citationNumberMap.set(entry.sourceNumber, index + 1);
+    }
+  });
+
+  return {
+    hasReferenceSection: referenceEntries.length > 0,
+    citationOrder,
+    citationNumberMap,
+    orderedReferenceEntries: orderedReferenceEntries.map((entry, index) => ({
+      ...entry,
+      renumberedIndex: index + 1,
+    })),
+    shouldRenumberCitations: referenceEntries.length > 0,
+    warnings,
+  };
 }
 
 // ── Inline tokens → children (TextRun + Math) ──
 // runFn: function(opts) → TextRun options, defaults to defaultRun
-function parseInline(children, extraStyle = {}, runFn = defaultRun) {
+function buildInlineTextStyle({ bold = false, italics = false } = {}) {
+  return {
+    ...(bold ? { bold: true } : {}),
+    ...(italics ? { italics: true } : {}),
+  };
+}
+
+function parseInline(children, extraStyle = {}, runFn = defaultRun, citationState = null) {
   if (!children || children.length === 0) return [new TextRun(runFn(extraStyle))];
   const runs = [];
   let bold = extraStyle.bold || false;
@@ -423,9 +681,15 @@ function parseInline(children, extraStyle = {}, runFn = defaultRun) {
     switch (tok.type) {
       case 'text':
         if (linkHref) {
-          runs.push({ type: 'link', href: linkHref, text: tok.content, bold, italic, runFn });
+          runs.push({
+            type: 'link',
+            href: linkHref,
+            text: tok.content,
+            ...buildInlineTextStyle({ bold, italics: italic }),
+            runFn,
+          });
         } else {
-          appendTextRunsWithCitations(runs, tok.content, bold, italic, runFn);
+          appendTextRunsWithCitations(runs, tok.content, bold, italic, runFn, citationState);
         }
         break;
       case 'strong_open': bold = true; break;
@@ -433,11 +697,10 @@ function parseInline(children, extraStyle = {}, runFn = defaultRun) {
       case 'em_open': italic = true; break;
       case 'em_close': italic = extraStyle.italics || false; break;
       case 'code_inline':
-        runs.push(new TextRun({
-          text: tok.content, bold, italics: italic,
-          font: { name: FONT_MONO }, size: 20,
-          shading: { type: ShadingType.CLEAR, fill: 'F0F0F0' },
-        }));
+        runs.push(new TextRun(runFn({
+          text: tok.content,
+          ...buildInlineTextStyle({ bold, italics: italic }),
+        })));
         break;
       case 'softbreak':
         runs.push(new TextRun(runFn({ text: ' ' })));
@@ -467,7 +730,7 @@ function parseInline(children, extraStyle = {}, runFn = defaultRun) {
       }
       default:
         if (tok.content) {
-          runs.push(new TextRun(runFn({ text: tok.content, bold, italics: italic })));
+          runs.push(new TextRun(runFn({ text: tok.content, ...buildInlineTextStyle({ bold, italics: italic }) })));
         }
     }
   }
@@ -481,7 +744,7 @@ function wrapLinks(runs) {
       return new ExternalHyperlink({
         link: r.href,
         children: [new TextRun(fn({
-          text: r.text, bold: r.bold, italics: r.italic, style: 'Hyperlink',
+          text: r.text, ...buildInlineTextStyle({ bold: r.bold, italics: r.italics }), style: 'Hyperlink',
         }))],
       });
     }
@@ -490,7 +753,18 @@ function wrapLinks(runs) {
 }
 
 // ── Block tokens → elements ──
-function convertTokens(tokens) {
+function buildReferenceParagraphs(citationState) {
+  return citationState.orderedReferenceEntries.map((entry) => new Paragraph({
+    children: [
+      new TextRun(referenceRun({ text: `[${entry.renumberedIndex}] ` })),
+      ...wrapLinks(parseInline(entry.children, {}, referenceRun, null)),
+    ],
+    spacing: { before: 0, after: 0, line: LINE_SPACING },
+    alignment: AlignmentType.JUSTIFIED,
+  }));
+}
+
+function convertTokens(tokens, citationState) {
   const elements = [];
   let i = 0;
   let listLevel = 0;
@@ -501,9 +775,22 @@ function convertTokens(tokens) {
   let figureIndex = 0;
   let tableIndex = 0;
   let equationIndex = 0;
+  let inReferences = false;
+  let referenceHeadingLevel = 0;
+  let referencesRendered = false;
+
+  function flushReferenceSection() {
+    if (referencesRendered || !citationState.hasReferenceSection) return;
+    elements.push(...buildReferenceParagraphs(citationState));
+    referencesRendered = true;
+  }
 
   while (i < tokens.length) {
     const tok = tokens[i];
+    if (inReferences && tok.type !== 'heading_open') {
+      i++;
+      continue;
+    }
 
     switch (tok.type) {
       case 'heading_open': {
@@ -512,6 +799,15 @@ function convertTokens(tokens) {
         i += 2;
         const hRunFn = (opts) => headingRun(level, opts);
         const headingText = extractPlainInlineText(inline.children)?.trim() || '';
+        if (inReferences && level <= referenceHeadingLevel && !isReferenceHeadingText(headingText)) {
+          flushReferenceSection();
+          inReferences = false;
+          referenceHeadingLevel = 0;
+        }
+        if (isReferenceHeadingText(headingText)) {
+          inReferences = true;
+          referenceHeadingLevel = level;
+        }
         if (level === 1) {
           const parsedChapter = parseChapterNumberFromTitle(headingText);
           if (parsedChapter > 0) {
@@ -521,17 +817,21 @@ function convertTokens(tokens) {
             equationIndex = 0;
           }
         }
-        const headingChildren = buildStructuredHeadingRuns(level, inline.children)
-          || wrapLinks(parseInline(
-            inline.children,
-            level <= 2 ? { bold: true, boldComplexScript: true } : {},
-            hRunFn,
-          ));
+        const headingChildren = (level === 1 && headingText)
+          ? [new TextRun(headingRun(level, { text: headingText, bold: true, boldComplexScript: true }))]
+          : buildStructuredHeadingRuns(level, inline.children)
+            || wrapLinks(parseInline(
+              inline.children,
+              level <= 2 ? { bold: true, boldComplexScript: true } : {},
+              hRunFn,
+              citationState,
+            ));
         elements.push(new Paragraph({
           heading: HEADING[level],
           children: headingChildren,
           spacing: { before: level <= 2 ? 360 : 240, after: 120, line: LINE_SPACING },
           alignment: level === 1 ? AlignmentType.CENTER : AlignmentType.LEFT,
+          pageBreakBefore: level === 1,
         }));
         break;
       }
@@ -540,19 +840,37 @@ function convertTokens(tokens) {
         const inline = tokens[++i];
         i += 2;
         const plainText = extractPlainInlineText(inline.children)?.trim() || '';
-        const isFigureCaption = /^图\s*/.test(plainText);
-        const isTableCaption = /^表\s*/.test(plainText);
+        const canBeCaption = listLevel === 0 && !inBlockquote;
+        const isFigureCaption = canBeCaption && /^图\s*/.test(plainText);
+        const isTableCaption = canBeCaption && /^表\s*/.test(plainText);
+        const captionKind = isFigureCaption ? '图' : isTableCaption ? '表' : '';
         if (isFigureCaption && currentChapter > 0) figureIndex++;
         if (isTableCaption && currentChapter > 0) tableIndex++;
-        const captionRunFn = (opts) => defaultRun(opts);
+        const captionRunFn = (opts) => captionRun(opts);
         const captionChildren = isFigureCaption
           ? buildCaptionRuns('图', currentChapter, figureIndex, inline.children, captionRunFn)
           : isTableCaption
             ? buildCaptionRuns('表', currentChapter, tableIndex, inline.children, captionRunFn)
             : null;
+        let bilingualCaptionChildren = null;
+        if (captionKind && tokens[i]?.type === 'paragraph_open' && tokens[i + 1]?.type === 'inline' && tokens[i + 2]?.type === 'paragraph_close') {
+          const nextInline = tokens[i + 1];
+          const nextText = extractPlainInlineText(nextInline.children)?.trim() || '';
+          if (isEnglishCaptionText(nextText, captionKind)) {
+            const englishRunFn = (opts) => captionEnglishRun(opts);
+            bilingualCaptionChildren = captionKind === '图'
+              ? buildEnglishCaptionRuns('图', currentChapter, figureIndex, nextInline.children, englishRunFn)
+              : buildEnglishCaptionRuns('表', currentChapter, tableIndex, nextInline.children, englishRunFn);
+            i += 3;
+          }
+        }
         const opts = {
-          children: captionChildren || wrapLinks(parseInline(inline.children)),
-          spacing: { before: 0, after: 0, line: LINE_SPACING },
+          children: captionChildren
+            ? (bilingualCaptionChildren
+              ? [...captionChildren, new TextRun(captionRun({ break: 1 })), ...bilingualCaptionChildren]
+              : captionChildren)
+            : wrapLinks(parseInline(inline.children, {}, defaultRun, citationState)),
+          spacing: { before: 0, after: 0, line: (isFigureCaption || isTableCaption) ? LINE_SPACING_SINGLE : LINE_SPACING },
           alignment: (isFigureCaption || isTableCaption) ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
         };
         if (inBlockquote) {
@@ -687,7 +1005,7 @@ function convertTokens(tokens) {
           if (t.type === 'th_close' || t.type === 'td_close') { i++; continue; }
           if (t.type === 'inline') {
             currentCells.push({
-              runs: parseInline(t.children, headerRow ? { bold: true } : {}, tableRun),
+              runs: parseInline(t.children, headerRow ? { bold: true } : {}, tableRun, citationState),
               header: headerRow,
             });
             i++;
@@ -751,6 +1069,7 @@ function convertTokens(tokens) {
         i++;
     }
   }
+  if (inReferences) flushReferenceSection();
   return elements;
 }
 
@@ -784,7 +1103,8 @@ const numberingConfig = [
 ];
 
 // ── Generate document ──
-const elements = convertTokens(tokens);
+const citationState = analyzeDocument(tokens);
+const elements = convertTokens(tokens, citationState);
 
 const doc = new Document({
   numbering: { config: numberingConfig },
@@ -796,7 +1116,7 @@ const doc = new Document({
       },
       heading1: {
         run: { font: FONT_BODY, size: FONT_SIZE_H1, bold: true, boldComplexScript: true },
-        paragraph: { spacing: { before: 360, after: 120, line: LINE_SPACING }, alignment: AlignmentType.CENTER },
+        paragraph: { spacing: { before: 360, after: 120, line: LINE_SPACING }, alignment: AlignmentType.CENTER, pageBreakBefore: true },
       },
       heading2: {
         run: { font: FONT_BODY, size: FONT_SIZE_H2, bold: true, boldComplexScript: true },
@@ -816,11 +1136,20 @@ const doc = new Document({
       },
     ],
   },
-  sections: [{ children: elements }],
+  sections: [{
+    properties: {
+      page: {
+        size: PAGE_SIZE,
+        margin: PAGE_MARGIN,
+      },
+    },
+    children: elements,
+  }],
 });
 
 const buf = await Packer.toBuffer(doc);
 writeFileSync(resolve(output), buf);
+for (const warning of citationState.warnings) console.warn(`Warning: ${warning}`);
 console.log(`Done: ${output}`);
 
 // Auto-open the generated document for preview

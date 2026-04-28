@@ -2,3 +2,5 @@
 ~$*.docx
 docs/skills/*-preview.docx
 skills/html-slide/node_modules/
+**/node_modules/
+test.docx

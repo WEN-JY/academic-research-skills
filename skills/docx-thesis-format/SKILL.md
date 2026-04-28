@@ -1,6 +1,7 @@
 ---
 name: docx-thesis-format
 description: "Detect and fix formatting issues in existing Word (.docx) thesis documents for Zhejiang University Engineering College requirements. Use when the user wants a deterministic Node.js workflow to inspect and automatically repair docx formatting, including body text, headings, section-title spacing, equation numbering, figure/table captions, three-line tables, headers/footers checks, and references."
+description_zh: 对现有 `.docx` 学位论文进行格式检测与自动修复，输出修复后的文档、Markdown 报告与 JSON 报告。
 ---
 
 # DOCX Thesis Format

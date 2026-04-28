@@ -1,6 +1,7 @@
 ---
 name: markdown-to-word
 description: "Convert Markdown files with LaTeX math, tables, and images to professionally formatted Word (.docx) documents. This skill should be used when users need to convert markdown academic papers to Word format, especially those following Zhejiang University Master of Engineering Management thesis body-format requirements such as FangSong body text, 1.5 line spacing, justified paragraphs, and three-line tables."
+description_zh: 将 Markdown 学术文稿转换为 Word 文档，支持公式、表格与图片，默认对齐浙江大学工程管理硕士学位论文常用正文格式。
 ---
 
 # Markdown to Word Conversion
@@ -71,8 +72,9 @@ input.md
 - Body paragraphs use justified alignment, 1.5 line spacing, and 0 pt spacing before/after
 - Level-2 headings are normalized to `2.1  标题` with two 宋体 spaces after the number
 - Level-3 headings are normalized to `2.1.1 标题` with one 宋体 space after the number
-- Figure captions are normalized to `图1.1 图题` and increase within each chapter
-- Table captions are normalized to `表1.1 表题` and increase within each chapter
+- Figure captions are normalized to `图1.1 图题`, rendered in 五号 + 单倍行距, and increase within each chapter
+- Table captions are normalized to `表1.1 表题`, rendered in 五号 + 单倍行距, and increase within each chapter
+- When a caption is immediately followed by an English `Figure ...` or `Table ...` line, the converter emits a centered bilingual two-line caption with the English line in `Times New Roman`
 - Heading 1 is centered; heading 2 and heading 3 are left aligned
 
 ### 3. Table Rendering
@@ -91,14 +93,16 @@ input.md
 - The formula body is centered and the equation number is right aligned
 - Converts LaTeX expressions into docx math objects through `latex2math.mjs`
 
-### 5. Citation Superscript Rendering
+### 5. Citation And References
 
 - Supports numeric citation markers written as `^[1]`, `^[2,3]`, `^[4-6]`
 - Converts these markers into Word superscript citations such as `[1]`
-- Keeps the visible citation text numeric so it can align with GB/T 7714-2015 reference numbering workflows
+- When a `参考文献` section exists, renumbers citations by first appearance in the body
+- Reorders the bibliography to match citation order, keeps numbering continuous, and warns when entries are missing type labels or body citations do not match the bibliography
 
-### 6. Image Rendering
+### 6. Page Layout And Image Rendering
 
+- Sets A4 portrait page size with 工程师学院正文页边距: 上/下 2.54 cm, 左/右 3.17 cm
 - Supports local PNG and JPEG images
 - Auto-detects image size from file headers
 - Scales down oversized images to fit the page width

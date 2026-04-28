@@ -16,6 +16,12 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 
 Installs skills (symlink by default) and updates the skill lists in `README.md` and `docs/README.md`; for remote installs it first caches a repo snapshot at `~/.codex/.cache/academic-research-skills/repo` (or under `CODEX_HOME` when set).
 
+Local install/update:
+
+```bash
+sh scripts/install_and_update.sh --source-root .
+```
+
 Example with arguments:
 
 ```bash
@@ -30,13 +36,13 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 ## Skill List
 
 <!-- SKILLS:START -->
-- `authorial-rewrite` - Rewrite AI-assisted academic drafts into author-specific, evidence-grounded prose. Use when users need to diagnose machine-like writing, strengthen claim-evidence alignment, or revise AI drafts for academic submission.
-- `word-flowchart` - Create Microsoft Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment; Mermaid conversion is supported as a use case.
-- `cites-review` - Review and normalize references and in-text citations for GB/T 7714-2015, CNKI extraction, citation cross-checking, and renumbering workflows.
-- `html-slide` - Generate HTML slides for academic defense and reporting with a consistent visual system, content cards, tables, and formula blocks.
-- `literature-review` - Retrieve recent high-quality literature for a research topic, expand literature review sections, and output GB/T 7714-2015 compatible references in citation order.
-- `markdown-to-word` - Convert Markdown academic writing into Word documents with support for formulas, tables, and images, with a default body-style profile aligned to Zhejiang University Master of Engineering Management thesis formatting.
-- `docx-thesis-format` - Inspect and auto-fix existing thesis `.docx` files, covering body text, headings, equation numbering, captions, three-line tables, TOC, headers, and footers with report outputs.
+- `authorial-rewrite` - Reduce AI-like phrasing and rewrite AI-assisted academic drafts into more natural, author-aligned prose.
+- `cites-review` - Review, organize, and format academic references and citations following GB/T 7714-2015 and other standards. This skill should be used when users need to: (1) Check and fix reference formatting errors, (2) Standardize citation styles, (3) Extract references from CNKI (知网) using browser scripts or Playwright automation, (4) Cross-check in-text citation numbers against the reference list, (5) Reorganize and renumber references after document restructuring.
+- `docx-thesis-format` - Detect and fix formatting issues in existing Word (.docx) thesis documents for Zhejiang University Engineering College requirements. Use when the user wants a deterministic Node.js workflow to inspect and automatically repair docx formatting, including body text, headings, section-title spacing, equation numbering, figure/table captions, three-line tables, headers/footers checks, and references.
+- `html-slide` - Generate HTML-based presentation slides for academic defense and professional presentations. This skill should be used when users need to create HTML slide pages with a consistent academic design system: navy-gold header, dot-pattern background, white content cards, KPI banners, data tables, and formula blocks. Each slide is a standalone 1280x720px HTML file that can be viewed in browser or converted to PPTX via html2pptx.js.
+- `literature-review` - Search and synthesize high-quality literature for a research topic, expand literature review sections, and output citation-ordered references in GB/T 7714-2015 style. Use when users need to: (1) retrieve recent high-quality papers around a theme, (2) supplement or rewrite a literature review based on an outline or draft, (3) merge new citations into an existing numbered reference list, (4) produce Markdown that stays compatible with cites-review and markdown-to-word.
+- `markdown-to-word` - Convert Markdown files with LaTeX math, tables, and images to professionally formatted Word (.docx) documents. This skill should be used when users need to convert markdown academic papers to Word format, especially those following Zhejiang University Master of Engineering Management thesis body-format requirements such as FangSong body text, 1.5 line spacing, justified paragraphs, and three-line tables.
+- `word-flowchart` - Create Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment. Use when converting text or images into flowcharts, refining DOT layout/spacing, enforcing strict alignment, or building complex parent-child expansions with dashed correspondence links and module boxes.
 <!-- SKILLS:END -->
 
 ## Notes

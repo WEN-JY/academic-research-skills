@@ -11,7 +11,10 @@
 - 一级标题：小三号、仿宋、加黑
 - 二级标题：四号、仿宋、加黑
 - 三级标题：小四号、仿宋
+- 图题、表题：五号、单倍行距、居中，并按章连续编号
+- 图题、表题支持中英文双标题；若紧跟 `Figure ...` 或 `Table ...` 行，则按两行居中输出，英文行为 `Times New Roman`
 - 表格：默认输出三线表
+- 页面：A4 纵向，正文页边距上/下 2.54 cm、左/右 3.17 cm
 - 英文与数字：`Times New Roman`
 
 说明：
@@ -26,6 +29,8 @@
 - 表格转换，并默认生成三线表风格
 - 本地图片插入
 - 中文标点与中英文混排的基础清洗
+- 数字引文按正文首次出现顺序重编号，并重排“参考文献”章节
+- 对缺失类型标识、正文引文缺项、未引用条目输出告警
 - 生成后直接打开 `.docx` 预览
 
 ## 适用场景
@@ -64,6 +69,12 @@ skills/markdown-to-word/convert_md_to_docx.sh [-o output.docx] input.md
 
 ```bash
 docs/skills/markdown-to-word-preview.docx
+```
+
+综合核对样张：
+
+```bash
+docs/skills/markdown-to-word-sample.md
 ```
 
 当前预览图：
