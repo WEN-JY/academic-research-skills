@@ -30,6 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 ## Skill List
 
 <!-- SKILLS:START -->
+- `authorial-rewrite` - Rewrite AI-assisted academic drafts into author-specific, evidence-grounded prose. Use when users need to diagnose machine-like writing, strengthen claim-evidence alignment, or revise AI drafts for academic submission.
 - `word-flowchart` - Create Microsoft Word-style flowcharts in Graphviz DOT with black/white styling, orthogonal arrows, and clean alignment; Mermaid conversion is supported as a use case.
 - `cites-review` - Review and normalize references and in-text citations for GB/T 7714-2015, CNKI extraction, citation cross-checking, and renumbering workflows.
 - `html-slide` - Generate HTML slides for academic defense and reporting with a consistent visual system, content cards, tables, and formula blocks.

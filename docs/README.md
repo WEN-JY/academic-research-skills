@@ -8,6 +8,8 @@
 2. 重启/重载你的 Agent 环境
 3. 在对话中点名技能并给出结构化需求
 
+如果你是第一次接触终端，建议先看仓库根目录的 `新手指南.md`。
+
 ## 自动化脚本
 
 ```bash
@@ -30,6 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/WEN-JY/academic-research-skills/mai
 ## 技能列表
 
 <!-- SKILLS:START -->
+- `authorial-rewrite` - 将 AI 辅助生成的论文草稿重写为更具作者判断、证据支撑和学科特征的学术文本，用于诊断机器腔、加强论点与证据匹配、减少模板化表达，并服务于合规的论文深度修订。
 - `word-flowchart` - 自主绘制 Microsoft Word 风格流程图（Graphviz DOT），强调黑白样式、正交连线与严格对齐；支持将 Mermaid 流程图作为输入进行转换。
 - `cites-review` - 审查、整理并规范参考文献与正文引用，适用于 GB/T 7714-2015 校验、知网文献提取、引文核对与重编号。
 - `html-slide` - 生成学术答辩与汇报场景的 HTML 幻灯片，提供统一视觉风格、图文布局、表格与公式展示组件。
