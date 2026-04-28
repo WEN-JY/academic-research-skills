@@ -6,6 +6,8 @@
 
 ### 安装
 
+如果你是第一次接触终端，建议先看仓库根目录的 `新手指南.md`。
+
 远程安装：
 
 ```bash
@@ -24,6 +26,7 @@ sh scripts/install_and_update.sh --source-root .
 
 在对话中直接点名 skill 名称，并说明输入、目标和输出格式，例如：
 
+- `使用 authorial-rewrite 重写这段机器腔较重的文献综述`
 - `使用 literature-review 围绕项目风险管理补充近3年文献综述，并输出参考文献`
 - `使用 docx-thesis-format 检查并修复这份 docx 学位论文`
 - `使用 word-flowchart 把下面流程整理成 Word 风格流程图`
@@ -31,6 +34,7 @@ sh scripts/install_and_update.sh --source-root .
 ## 技能列表
 
 <!-- SKILLS:START -->
+- `authorial-rewrite` - 用于降低 AI 率和机器腔的改写 skill，将 AI 辅助生成的论文草稿调整为更自然、更贴近作者表达的学术文本。
 - `cites-review` - 审查、整理并规范参考文献与正文引用，适用于 GB/T 7714-2015 校验、知网文献提取、引文核对与重编号。
 - `docx-thesis-format` - 对现有 `.docx` 学位论文进行格式检测与自动修复，输出修复后的文档、Markdown 报告与 JSON 报告。
 - `html-slide` - 生成学术答辩与汇报场景的 HTML 幻灯片，提供统一视觉风格、图文布局、表格与公式展示组件。
@@ -43,6 +47,7 @@ sh scripts/install_and_update.sh --source-root .
 
 | Skill | 核心能力 | 主要边界 |
 |------|------|------|
+| `authorial-rewrite` | 降低 AI 率、减少机器腔、增强作者表达一致性 | 不替代事实核验、文献补证和研究结论本身 |
 | `word-flowchart` | 规范流程图与技术路线图 | 不面向重视觉品牌设计或自由信息图 |
 | `cites-review` | 参考文献规范化、重编号、引文核对 | 不保证文献真实性与数据库权威性 |
 | `literature-review` | 主题检索、综述补写、参考文献合并 | 不替代研究者阅读全文和理论判断 |

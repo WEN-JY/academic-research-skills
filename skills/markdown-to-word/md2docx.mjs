@@ -260,7 +260,14 @@ function headingRun(level, opts = {}) {
   const { font: fontOverride, ...rest } = opts;
   const size = level === 1 ? FONT_SIZE_H1 : level === 2 ? FONT_SIZE_H2 : FONT_SIZE_H3;
   const defaultBold = level <= 2; // H1, H2 加黑; H3 不加黑
-  return { font: fontOverride || FONT_BODY, size, ...rest, bold: rest.bold ?? defaultBold };
+  const resolvedBold = rest.bold ?? defaultBold;
+  return {
+    font: fontOverride || FONT_BODY,
+    size,
+    ...rest,
+    bold: resolvedBold,
+    boldComplexScript: rest.boldComplexScript ?? resolvedBold,
+  };
 }
 
 function captionRun(opts = {}) {
@@ -761,7 +768,8 @@ function convertTokens(tokens, citationState) {
   const elements = [];
   let i = 0;
   let listLevel = 0;
-  const listTypes = [];
+  const listStack = [];
+  let orderedListInstance = 0;
   let inBlockquote = false;
   let currentChapter = 0;
   let figureIndex = 0;
@@ -810,9 +818,14 @@ function convertTokens(tokens, citationState) {
           }
         }
         const headingChildren = (level === 1 && headingText)
-          ? [new TextRun(headingRun(level, { text: headingText, bold: true }))]
+          ? [new TextRun(headingRun(level, { text: headingText, bold: true, boldComplexScript: true }))]
           : buildStructuredHeadingRuns(level, inline.children)
-            || wrapLinks(parseInline(inline.children, {}, hRunFn, citationState));
+            || wrapLinks(parseInline(
+              inline.children,
+              level <= 2 ? { bold: true, boldComplexScript: true } : {},
+              hRunFn,
+              citationState,
+            ));
         elements.push(new Paragraph({
           heading: HEADING[level],
           children: headingChildren,
@@ -864,9 +877,11 @@ function convertTokens(tokens, citationState) {
           opts.indent = { left: convertInchesToTwip(0.4), firstLine: INDENT_2CHAR };
           opts.border = { left: { style: BorderStyle.SINGLE, size: 3, color: '999999', space: 8 } };
         } else if (listLevel > 0) {
+          const currentList = listStack[listStack.length - 1];
           opts.numbering = {
-            reference: listTypes[listTypes.length - 1] === 'ordered' ? 'ordered-list' : 'bullet-list',
+            reference: currentList?.type === 'ordered' ? 'ordered-list' : 'bullet-list',
             level: listLevel - 1,
+            ...(currentList?.type === 'ordered' ? { instance: currentList.instance } : {}),
           };
         } else if (isFigureCaption || isTableCaption) {
           opts.indent = { firstLine: 0 };
@@ -950,10 +965,27 @@ function convertTokens(tokens, citationState) {
       case 'blockquote_open': inBlockquote = true; i++; break;
       case 'blockquote_close': inBlockquote = false; i++; break;
 
-      case 'bullet_list_open': listLevel++; listTypes.push('bullet'); i++; break;
-      case 'bullet_list_close': listLevel--; listTypes.pop(); i++; break;
-      case 'ordered_list_open': listLevel++; listTypes.push('ordered'); i++; break;
-      case 'ordered_list_close': listLevel--; listTypes.pop(); i++; break;
+      case 'bullet_list_open':
+        listLevel++;
+        listStack.push({ type: 'bullet' });
+        i++;
+        break;
+      case 'bullet_list_close':
+        listLevel--;
+        listStack.pop();
+        i++;
+        break;
+      case 'ordered_list_open':
+        listLevel++;
+        orderedListInstance++;
+        listStack.push({ type: 'ordered', instance: orderedListInstance });
+        i++;
+        break;
+      case 'ordered_list_close':
+        listLevel--;
+        listStack.pop();
+        i++;
+        break;
       case 'list_item_open':
       case 'list_item_close': i++; break;
 
@@ -1083,11 +1115,11 @@ const doc = new Document({
         paragraph: { spacing: { before: 0, after: 0, line: LINE_SPACING }, alignment: AlignmentType.JUSTIFIED },
       },
       heading1: {
-        run: { font: FONT_BODY, size: FONT_SIZE_H1, bold: true },
+        run: { font: FONT_BODY, size: FONT_SIZE_H1, bold: true, boldComplexScript: true },
         paragraph: { spacing: { before: 360, after: 120, line: LINE_SPACING }, alignment: AlignmentType.CENTER, pageBreakBefore: true },
       },
       heading2: {
-        run: { font: FONT_BODY, size: FONT_SIZE_H2, bold: true },
+        run: { font: FONT_BODY, size: FONT_SIZE_H2, bold: true, boldComplexScript: true },
         paragraph: { spacing: { before: 240, after: 120, line: LINE_SPACING }, alignment: AlignmentType.LEFT },
       },
       heading3: {
