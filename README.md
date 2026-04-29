@@ -4,9 +4,9 @@
 [![GitHub Issues](https://img.shields.io/github/issues/WEN-JY/academic-research-skills)](https://github.com/WEN-JY/academic-research-skills/issues)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/WEN-JY/academic-research-skills)](https://github.com/WEN-JY/academic-research-skills/commits/main)
 
-# 学术研究技能集
+# MEM 论文skills
 
-面向学术研究场景的 Agent Skills 仓库，聚焦文献综述、参考文献整理、论文排版、答辩材料生成与研究流程可视化。仓库中的 skill 源码统一放在 `skills/` 目录，每个 skill 至少包含一个 `SKILL.md`，供支持 skill 机制的智能体按名称调用。
+面向ZJU MEM场景的 Agent Skills 仓库，聚焦文献综述、参考文献整理、论文排版、答辩材料生成与研究流程可视化。仓库中的 skill 源码统一放在 `skills/` 目录，每个 skill 至少包含一个 `SKILL.md`，供支持 skill 机制的智能体按名称调用。
 
 这个仓库既包含提示型工作流，也包含可直接执行的脚本、模板和规则文件：
 
