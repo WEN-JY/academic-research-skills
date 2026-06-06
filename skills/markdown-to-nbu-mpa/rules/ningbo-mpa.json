@@ -1,0 +1,175 @@
+{
+  "profile": "ningbo-university-mpa",
+  "body": {
+    "eastAsiaFont": "宋体",
+    "latinFont": "Times New Roman",
+    "fontSizeHalfPoints": 24,
+    "lineTwips": 312,
+    "spacingBefore": 0,
+    "spacingAfter": 0,
+    "alignment": "both",
+    "firstLineTwips": 480,
+    "cjkCharacterSpacingTwentiethPoints": 11,
+    "latinCharacterSpacingTwentiethPoints": 0
+  },
+  "page": {
+    "widthTwips": 11907,
+    "heightTwips": 16840,
+    "orientation": "portrait",
+    "allowedMarginProfiles": [
+      {
+        "name": "nbu-mpa-body",
+        "top": 1417,
+        "right": 1134,
+        "bottom": 1417,
+        "left": 1701,
+        "header": 720,
+        "footer": 720,
+        "gutter": 0
+      }
+    ],
+    "docGridLinePitch": 312
+  },
+  "pageNumbering": {
+    "frontMatterFormat": "upperRoman",
+    "frontMatterStart": 1,
+    "bodyFormat": "decimal",
+    "footerAlignment": "center",
+    "footerFont": "宋体",
+    "footerLatinFont": "宋体",
+    "footerFontSizeHalfPoints": 18
+  },
+  "headersFooters": {
+    "oddHeaderText": "宁波大学硕士学位论文",
+    "evenHeaderText": "论文中文题目",
+    "headerAlignment": "center",
+    "headerFont": "宋体",
+    "headerFontSizeHalfPoints": 21,
+    "requirePageFieldInFooters": true
+  },
+  "toc": {
+    "autoGenerate": true,
+    "headingText": "目    录",
+    "headingFont": "黑体",
+    "headingFontSizeHalfPoints": 32,
+    "blankLineFontSizeHalfPoints": 30,
+    "entryFont": "宋体",
+    "entryLatinFont": "Times New Roman",
+    "entryFontSizeHalfPoints": 24,
+    "entryLineTwips": 312,
+    "entryBold": false,
+    "level1Bold": true,
+    "level2Bold": true,
+    "level3Bold": false,
+    "level2IndentTwips": 480,
+    "level3IndentTwips": 960,
+    "fieldCode": "TOC \\\\o \"1-3\" \\\\h \\\\z \\\\u",
+    "requiredOrder": [
+      "引言",
+      "第1章",
+      "参考文献",
+      "在学研究成果",
+      "致谢"
+    ]
+  },
+  "headings": {
+    "enforceHierarchyCheck": false,
+    "chapter": {
+      "pattern": "^第[0-9一二三四五六七八九十]+章",
+      "font": "黑体",
+      "latinFont": "Times New Roman",
+      "fontSizeHalfPoints": 30,
+      "bold": false,
+      "alignment": "left",
+      "lineTwips": 360,
+      "spacingBefore": 0,
+      "spacingAfter": 0,
+      "cjkCharacterSpacingTwentiethPoints": 0,
+      "latinCharacterSpacingTwentiethPoints": -5,
+      "pageBreakBefore": true
+    },
+    "section": {
+      "pattern": "^([1-9]\\d?\\.\\d{1,2})\\s+(.+)$",
+      "spacesAfterNumber": 1,
+      "spaceFont": "宋体",
+      "font": "黑体",
+      "latinFont": "Times New Roman",
+      "fontSizeHalfPoints": 28,
+      "bold": false,
+      "alignment": "left",
+      "lineTwips": 360,
+      "spacingBefore": 0,
+      "spacingAfter": 0,
+      "cjkCharacterSpacingTwentiethPoints": 0,
+      "latinCharacterSpacingTwentiethPoints": -5
+    },
+    "subsection": {
+      "pattern": "^([1-9]\\d?\\.\\d{1,2}\\.\\d{1,2})\\s+(.+)$",
+      "spacesAfterNumber": 1,
+      "spaceFont": "宋体",
+      "font": "黑体",
+      "latinFont": "Times New Roman",
+      "fontSizeHalfPoints": 24,
+      "bold": false,
+      "alignment": "left",
+      "lineTwips": 360,
+      "spacingBefore": 0,
+      "spacingAfter": 0,
+      "cjkCharacterSpacingTwentiethPoints": 0,
+      "latinCharacterSpacingTwentiethPoints": -5
+    }
+  },
+  "equations": {
+    "numberFormat": "（{chapter}-{index}）",
+    "appendixNumberFormat": "（{appendix}-{index}）",
+    "equationAlignment": "center",
+    "paragraphAlignment": "left",
+    "centerTabTwips": 4500,
+    "numberAlignment": "right",
+    "rightTabTwips": 9000
+  },
+  "figures": {
+    "numberFormat": "图{chapter}.{index}",
+    "captionPosition": "below",
+    "alignment": "center",
+    "layout": "top-and-bottom",
+    "widthPercent": 100,
+    "font": "宋体",
+    "latinFont": "Times New Roman",
+    "fontSizeHalfPoints": 24,
+    "lineTwips": 240
+  },
+  "tables": {
+    "numberFormat": "表{chapter}.{index}",
+    "captionPosition": "above",
+    "alignment": "center",
+    "style": "three-line-table",
+    "cellAlignment": "center",
+    "repeatHeaderRow": false,
+    "captionFont": "宋体",
+    "captionLatinFont": "Times New Roman",
+    "captionFontSizeHalfPoints": 24,
+    "captionLineTwips": 240,
+    "removeEnglishCaptions": true,
+    "bodyFont": "宋体",
+    "bodyLatinFont": "Times New Roman",
+    "bodyFontSizeHalfPoints": 21
+  },
+  "references": {
+    "heading": "参考文献",
+    "numberFormat": "[{index}]",
+    "continuous": true,
+    "orderByCitation": true,
+    "typePattern": "\\[(M|C|N|J|D|R|S|P|A|DB|CP|EB/OL|DB/OL)\\]",
+    "font": "宋体",
+    "latinFont": "Times New Roman",
+    "fontSizeHalfPoints": 24,
+    "lineTwips": 312
+  },
+  "abstract": {
+    "chineseKeywordsMin": 3,
+    "chineseKeywordsMax": 8,
+    "englishFont": "Times New Roman",
+    "fontSizeHalfPoints": 24
+  }
+}
